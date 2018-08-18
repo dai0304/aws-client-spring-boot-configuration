@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration

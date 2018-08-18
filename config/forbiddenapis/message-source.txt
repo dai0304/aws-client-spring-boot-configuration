@@ -1,0 +1,2 @@
+@defaultMessage Provide default message
+org.springframework.context.MessageSource#getMessage(java.lang.String,java.lang.Object[],java.util.Locale)

@@ -1,0 +1,14 @@
+pmd {
+	consoleOutput = true
+	toolVersion = "$pmdVersion"
+}
+
+pmdMain {
+	ruleSetFiles = files("${rootProject.projectDir}/config/pmd/pmd-settings.xml")
+	ruleSets = []  // To apply only the custom rules
+}
+
+pmdTest {
+	ruleSetFiles = files("${rootProject.projectDir}/config/pmd/pmd-settings-test.xml")
+	ruleSets = []  // To apply only the custom rules
+}

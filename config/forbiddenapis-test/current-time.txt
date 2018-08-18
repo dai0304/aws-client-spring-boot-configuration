@@ -1,0 +1,4 @@
+@defaultMessage System clock must be accessed via jp.xet.baseunits.timeutil.Clock
+java.lang.System#currentTimeMillis()
+java.lang.System#nanoTime()
+java.util.Date#<init>()
