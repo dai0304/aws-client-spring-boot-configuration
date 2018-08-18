@@ -1,0 +1,122 @@
+buildscript {
+	repositories {
+		jcenter()
+		mavenCentral()
+		maven { url "https://plugins.gradle.org/m2/" }
+	}
+	dependencies {
+		classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
+		classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:$spotbugsPluginVersion"
+		classpath "com.diffplug.spotless:spotless-plugin-gradle:3.10.0"
+		classpath "de.thetaphi:forbiddenapis:2.2"
+		classpath "de.aaschmid:gradle-cpd-plugin:1.0"
+	}
+}
+
+// basic plugins
+plugins {
+	id 'java'
+	id 'maven'
+	id 'maven-publish'
+	id "com.jfrog.bintray" version "1.7.3"
+}
+apply plugin: "io.spring.dependency-management"
+
+// basic configuration
+group = "jp.xet.spring.aws"
+ext.artifactId = "xet-aws-client-autoconfigure"
+
+// custom plugins
+apply plugin: "checkstyle"
+apply plugin: "com.github.spotbugs"
+apply plugin: "pmd"
+apply plugin: "cpd"
+apply plugin: "jacoco"
+apply plugin: "de.thetaphi.forbiddenapis"
+apply plugin: "com.diffplug.gradle.spotless"
+
+// custom configuration
+apply from: "${rootProject.projectDir}/gradle/quality/checkstyle.gradle"
+apply from: "${rootProject.projectDir}/gradle/quality/spotbugs.gradle"
+apply from: "${rootProject.projectDir}/gradle/quality/pmd.gradle"
+apply from: "${rootProject.projectDir}/gradle/quality/cpd.gradle"
+apply from: "${rootProject.projectDir}/gradle/quality/jacoco.gradle"
+apply from: "${rootProject.projectDir}/gradle/quality/forbiddenapis.gradle"
+apply from: "${rootProject.projectDir}/gradle/quality/spotless.gradle"
+
+apply from: "${rootProject.projectDir}/gradle/version.gradle"
+apply from: "${rootProject.projectDir}/gradle/sourceArtifact.gradle"
+apply from: "${rootProject.projectDir}/gradle/bintray.gradle"
+
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+	reports {
+		xml.enabled = false
+		html.enabled = true
+	}
+	pluginClasspath = project.configurations.spotbugsPlugins
+}
+
+// compiler
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(AbstractCompile) each {
+	it.options.encoding = "UTF-8"
+}
+
+compileJava {
+	options.compilerArgs << "-Werror"
+	options.compilerArgs << "-Xlint:all" << "-Xlint:-processing" << "-Xlint:-deprecation"
+}
+
+// ======== libraries ========
+repositories {
+	jcenter()
+	mavenCentral()
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.boot:spring-boot-dependencies:$springBootVersion"
+	}
+}
+
+configurations {
+	testImplementation.extendsFrom compileOnly
+}
+
+dependencies {
+	implementation "org.springframework.boot:spring-boot-autoconfigure"
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+	compileOnly "com.amazonaws:aws-java-sdk-core:$awsJavaSdkVersion"
+	compileOnly "org.projectlombok:lombok"
+	annotationProcessor "org.projectlombok:lombok"
+
+	testImplementation "org.springframework.boot:spring-boot-starter-test"
+	testImplementation "org.springframework.boot:spring-boot-starter-logging"
+	testImplementation 'org.assertj:assertj-core:3.10.0'
+	testImplementation("com.amazonaws:aws-java-sdk:$awsJavaSdkVersion") {
+		exclude group: 'com.amazonaws', module: 'aws-java-sdk-simpledb'
+	}
+	testCompileOnly "org.projectlombok:lombok"
+	testAnnotationProcessor "org.projectlombok:lombok"
+
+	spotbugsPlugins "com.h3xstream.findsecbugs:findsecbugs-plugin:$findsecbugsVersion"
+}
+
+configurations.all {
+	resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+		if (details.requested.name == "commons-logging") {
+			// prefer "jcl-over-slf4j" over "commons-logging":
+			details.useTarget "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+		}
+		if (details.requested.name == "log4j") {
+			// prefer "log4j-over-slf4j" over "log4j":
+			details.useTarget "org.slf4j:log4j-over-slf4j:$slf4jVersion"
+		}
+	}
+}
+
+// ======== wrapper ========
+wrapper {
+	gradleVersion = "4.8.1"
+}
