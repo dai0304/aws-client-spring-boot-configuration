@@ -21,11 +21,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 import com.amazonaws.ClientConfiguration;
 
@@ -85,71 +91,11 @@ import com.amazonaws.ClientConfiguration;
 @Configuration
 @Import(AwsClientBuilderConfiguration.class)
 @Slf4j
-@RequiredArgsConstructor
-public class AwsAutoConfiguration implements InitializingBean {
+public class AwsAutoConfiguration {
 	
-	private final AwsClientBuilderConfiguration awsClientBuilderConfiguration;
-	
-	private final ConfigurableBeanFactory beanFactory;
-	
-	@Setter
-	@Value("${aws.sync-enabled:true}")
-	private boolean syncEnabled;
-	
-	@Setter
-	@Value("${aws.async-enabled:false}")
-	private boolean asyncEnabled;
-	
-	
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		if (syncEnabled == false) {
-			log.debug("AWS sync client is disabled.");
-		}
-		if (asyncEnabled == false) {
-			log.debug("AWS async client is disabled.");
-		}
-		AwsClientBuilderLoader.loadBuilderNames().forEach(this::registerAwsClient);
-	}
-	
-	private void registerAwsClient(String builderClassName) {
-		try {
-			log.trace("Attempt to configure AWS client: {}", builderClassName);
-			if (syncEnabled == false && builderClassName.endsWith("AsyncClientBuilder") == false) {
-				log.trace("Skip {} -- sync client is disabled.", builderClassName);
-				return;
-			}
-			if (asyncEnabled == false && builderClassName.endsWith("AsyncClientBuilder")) {
-				log.trace("Skip {} -- async client is disabled", builderClassName);
-				return;
-			}
-			if (awsClientBuilderConfiguration.isConfigurable(builderClassName) == false) {
-				return;
-			}
-			
-			Class<?> builderClass = Class.forName(builderClassName);
-			Class<?> clientClass = AwsClientUtil.getClientClass(builderClass);
-			
-			if (beanFactory.containsBean(clientClass.getName())) {
-				log.debug("Skip {} -- already configured", clientClass.getName());
-				return;
-			}
-			
-			Object builder = AwsClientUtil.createBuilder(builderClass);
-			awsClientBuilderConfiguration.configureBuilder(builderClassName, clientClass, builder);
-			Object client = AwsClientUtil.buildClient(builder);
-			
-			beanFactory.registerSingleton(clientClass.getName(), client);
-			log.trace("AWS client {} is configured", clientClass.getName());
-		} catch (ClassNotFoundException e) {
-			log.trace("Skip.  Builder class is not found in classpath: {}", builderClassName);
-			// ignore
-		} catch (ClientDisabledException e) {
-			log.debug("Skip.  Client auto-configuration is disabled: {}", builderClassName);
-			// ignore
-		} catch (ClientClassNotDeterminedException | IllegalStateException | UndeclaredThrowableException e) {
-			log.error("Illegal builder: {}", builderClassName, e);
-			throw e;
-		}
+	@Bean
+	public AwsClientBeanDefinitionRegistryPostProcessor awsClientBeanDefinitionRegistryPostProcessor(
+			ConfigurableEnvironment environment, AwsClientBuilderConfiguration awsClientBuilderConfiguration) {
+		return new AwsClientBeanDefinitionRegistryPostProcessor(environment, awsClientBuilderConfiguration);
 	}
 }

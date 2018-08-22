@@ -25,6 +25,9 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +45,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 @Slf4j
 @RequiredArgsConstructor
 @Configuration
-public class AwsClientBuilderConfiguration {
+public class AwsClientBuilderConfiguration implements BeanFactoryAware {
 	
 	private static final String DEFAULT_NAME = "default";
 	
@@ -78,7 +81,12 @@ public class AwsClientBuilderConfiguration {
 	}
 	
 	
-	private final ConfigurableBeanFactory beanFactory;
+	private ConfigurableBeanFactory beanFactory;
+	
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = (ConfigurableBeanFactory) beanFactory;
+	}
 	
 	
 	boolean isConfigurable(String builderClassName) {
