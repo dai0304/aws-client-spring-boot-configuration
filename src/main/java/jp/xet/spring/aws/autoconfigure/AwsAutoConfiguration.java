@@ -83,8 +83,8 @@ import com.amazonaws.ClientConfiguration;
 public class AwsAutoConfiguration {
 	
 	@Bean
-	public static AwsClientBeanDefinitionRegistryPostProcessor awsClientBeanDefinitionRegistryPostProcessor(
+	public static AwsClientBeanRegistrar awsClientBeanDefinitionRegistryPostProcessor(
 			ConfigurableEnvironment environment, AwsClientBuilderConfiguration awsClientBuilderConfiguration) {
-		return new AwsClientBeanDefinitionRegistryPostProcessor(environment, awsClientBuilderConfiguration);
+		return new AwsClientBeanRegistrar(environment, awsClientBuilderConfiguration);
 	}
 }

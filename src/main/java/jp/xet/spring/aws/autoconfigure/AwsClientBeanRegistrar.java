@@ -25,6 +25,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
@@ -35,8 +36,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AwsClientBeanDefinitionRegistryPostProcessor
-		implements BeanDefinitionRegistryPostProcessor, InitializingBean {
+public class AwsClientBeanRegistrar
+		implements BeanDefinitionRegistryPostProcessor, Ordered, InitializingBean {
 	
 	private final ConfigurableEnvironment environment;
 	
@@ -48,6 +49,11 @@ public class AwsClientBeanDefinitionRegistryPostProcessor
 	
 	
 	@Override
+	public int getOrder() {
+		return Ordered.LOWEST_PRECEDENCE;
+	}
+	
+	@Override
 	public void afterPropertiesSet() throws Exception {
 		syncEnabled = Boolean.valueOf(environment.getProperty("aws.sync-enabled", "true"));
 		asyncEnabled = Boolean.valueOf(environment.getProperty("aws.async-enabled", "false"));
@@ -55,12 +61,12 @@ public class AwsClientBeanDefinitionRegistryPostProcessor
 	
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
-		log.debug("postProcessBeanDefinitionRegistry");
+		log.trace("postProcessBeanDefinitionRegistry");
 	}
 	
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		log.debug("postProcessBeanFactory");
+		log.trace("postProcessBeanFactory");
 		
 		if (syncEnabled == false) {
 			log.debug("AWS sync client is disabled.");
