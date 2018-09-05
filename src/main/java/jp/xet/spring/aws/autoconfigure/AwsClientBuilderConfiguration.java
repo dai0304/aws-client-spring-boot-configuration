@@ -30,8 +30,11 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -45,7 +48,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 @Slf4j
 @RequiredArgsConstructor
 @Configuration
-public class AwsClientBuilderConfiguration implements BeanFactoryAware {
+public class AwsClientBuilderConfiguration implements BeanFactoryAware, EnvironmentAware {
 	
 	private static final String DEFAULT_NAME = "default";
 	
@@ -83,10 +86,17 @@ public class AwsClientBuilderConfiguration implements BeanFactoryAware {
 	
 	private ConfigurableBeanFactory beanFactory;
 	
+	private ConfigurableEnvironment environment;
+	
 	
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = (ConfigurableBeanFactory) beanFactory;
+	}
+	
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = (ConfigurableEnvironment) environment;
 	}
 	
 	boolean isConfigurable(String builderClassName) {
