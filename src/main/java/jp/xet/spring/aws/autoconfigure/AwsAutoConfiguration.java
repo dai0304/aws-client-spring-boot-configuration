@@ -94,7 +94,7 @@ import com.amazonaws.ClientConfiguration;
 public class AwsAutoConfiguration {
 	
 	@Bean
-	public AwsClientBeanDefinitionRegistryPostProcessor awsClientBeanDefinitionRegistryPostProcessor(
+	public static AwsClientBeanDefinitionRegistryPostProcessor awsClientBeanDefinitionRegistryPostProcessor(
 			ConfigurableEnvironment environment, AwsClientBuilderConfiguration awsClientBuilderConfiguration) {
 		return new AwsClientBeanDefinitionRegistryPostProcessor(environment, awsClientBuilderConfiguration);
 	}
