@@ -56,7 +56,7 @@ public class AwsClientBuilderConfiguration implements BeanFactoryAware, Environm
 	
 	private static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
 	
-	static final String ENCRYPTION_MATERIALS_PROVIDER = "com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
+	private static final String ENCRYPTION_MATERIALS_PROVIDER = "com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
 	
 	
 	private static Optional<AwsClientProperties> getAwsClientProperties(
