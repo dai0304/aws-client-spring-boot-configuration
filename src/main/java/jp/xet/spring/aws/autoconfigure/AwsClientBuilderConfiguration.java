@@ -83,11 +83,11 @@ public class AwsClientBuilderConfiguration implements BeanFactoryAware {
 	
 	private ConfigurableBeanFactory beanFactory;
 	
+	
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = (ConfigurableBeanFactory) beanFactory;
 	}
-	
 	
 	boolean isConfigurable(String builderClassName) {
 		if (builderClassName.equals(ENCRYPTION_CLIENT_BUILDER)

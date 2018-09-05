@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AwsClientBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor, InitializingBean {
+public class AwsClientBeanDefinitionRegistryPostProcessor
+		implements BeanDefinitionRegistryPostProcessor, InitializingBean {
 	
 	private final ConfigurableEnvironment environment;
 	
@@ -44,6 +45,7 @@ public class AwsClientBeanDefinitionRegistryPostProcessor implements BeanDefinit
 	private boolean asyncEnabled;
 	
 	private final AwsClientBuilderConfiguration awsClientBuilderConfiguration;
+	
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -96,7 +98,7 @@ public class AwsClientBeanDefinitionRegistryPostProcessor implements BeanDefinit
 			awsClientBuilderConfiguration.configureBuilder(builderClassName, clientClass, builder);
 			Object client = AwsClientUtil.buildClient(builder);
 			
-			 beanFactory.registerSingleton(clientClass.getName(), client);
+			beanFactory.registerSingleton(clientClass.getName(), client);
 			log.trace("AWS client {} is configured", clientClass.getName());
 		} catch (ClassNotFoundException e) {
 			log.trace("Skip.  Builder class is not found in classpath: {}", builderClassName);
