@@ -28,9 +28,6 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
-
 /**
  * Spring configuration class to configure AWS client builders.
  *
@@ -78,7 +75,7 @@ public class AwsClientBuilderConfigurer {
 	
 	private final ConfigurableBeanFactory beanFactory;
 	
-	private final Map<String, AwsClientProperties> awsClientPropertiesMap;
+	private final AwsClientPropertiesMap awsClientPropertiesMap;
 	
 	private final AwsS3ClientProperties awsS3ClientProperties;
 	

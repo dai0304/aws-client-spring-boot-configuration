@@ -15,12 +15,7 @@
  */
 package jp.xet.spring.aws.autoconfigure;
 
-import java.util.HashMap;
-
-import lombok.Data;
-
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +23,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 /**
  * Spring auto-configuration for AWS Clients.
@@ -87,94 +81,22 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 public class AwsAutoConfiguration {
 	
 	@Bean
-	public AwsClientBeanRegistrar awsClientRegisterer(ApplicationContext applicationContext,
+	public static AwsClientBeanRegistrar awsClientRegisterer(ApplicationContext applicationContext,
 			ConfigurableBeanFactory beanFactory, ConfigurableEnvironment environment) throws Exception { // NOPMD
-		AwsClientPropertiesMap awsClientPropertiesMap = awsClientPropertiesMap(applicationContext);
-		AwsS3ClientProperties awsS3ClientProperties = awsS3ClientProperties(applicationContext);
+		AwsClientPropertiesMap awsClientPropertiesMap = awsClientPropertiesMap();
+		AwsS3ClientProperties awsS3ClientProperties = awsS3ClientProperties();
 		AwsClientBuilderConfigurer awsClientBuilderConfigurer =
 				new AwsClientBuilderConfigurer(beanFactory, awsClientPropertiesMap, awsS3ClientProperties);
 		return new AwsClientBeanRegistrar(environment, awsClientBuilderConfigurer);
 	}
 	
 	@Bean
-	public AwsClientPropertiesMap awsClientPropertiesMap(ApplicationContext applicationContext) throws Exception { // NOPMD
-		ConfigurationPropertiesBindingPostProcessor p = new ConfigurationPropertiesBindingPostProcessor();
-		p.setApplicationContext(applicationContext);
-		p.afterPropertiesSet();
-		
-		AwsClientPropertiesMap map = new AwsClientPropertiesMap();
-		p.postProcessBeforeInitialization(map, "awsClientPropertiesMap");
-		return map;
+	public static AwsClientPropertiesMap awsClientPropertiesMap() {
+		return new AwsClientPropertiesMap();
 	}
 	
 	@Bean
-	public AwsS3ClientProperties awsS3ClientProperties(ApplicationContext applicationContext) throws Exception { // NOPMD
-		ConfigurationPropertiesBindingPostProcessor p = new ConfigurationPropertiesBindingPostProcessor();
-		p.setApplicationContext(applicationContext);
-		p.afterPropertiesSet();
-		
-		AwsS3ClientProperties awsS3ClientProperties = new AwsS3ClientProperties();
-		p.postProcessBeforeInitialization(awsS3ClientProperties, "awsS3ClientProperties");
-		return awsS3ClientProperties;
-	}
-	
-	
-	@SuppressWarnings("serial")
-	@ConfigurationProperties(value = "aws", ignoreInvalidFields = true)
-	static class AwsClientPropertiesMap extends HashMap<String, AwsClientProperties> {
-	}
-	
-	@Data
-	static class AwsClientProperties {
-		
-		private ClientConfiguration client;
-		
-		private MutableEndpointConfiguration endpoint;
-		
-		private String region;
-		
-		private boolean enabled = true;
-		
-		
-		EndpointConfiguration getEndpoint() {
-			return endpoint == null ? null : endpoint.toEndpointConfiguration();
-		}
-	}
-	
-	/**
-	 * @see <a href="https://github.com/spring-projects/spring-boot/issues/8762">spring-boot#8762</a>
-	 */
-	@Data
-	static class MutableEndpointConfiguration {
-		
-		private String serviceEndpoint;
-		
-		private String signingRegion;
-		
-		
-		EndpointConfiguration toEndpointConfiguration() {
-			if (serviceEndpoint != null) {
-				return new EndpointConfiguration(serviceEndpoint, signingRegion);
-			}
-			return null;
-		}
-	}
-	
-	@Data
-	@ConfigurationProperties(value = "aws.s3", ignoreInvalidFields = true)
-	static class AwsS3ClientProperties {
-		
-		private Boolean pathStyleAccessEnabled;
-		
-		private Boolean chunkedEncodingDisabled;
-		
-		private Boolean accelerateModeEnabled;
-		
-		private Boolean payloadSigningEnabled;
-		
-		private Boolean dualstackEnabled;
-		
-		private Boolean forceGlobalBucketAccessEnabled;
-		
+	public static AwsS3ClientProperties awsS3ClientProperties() {
+		return new AwsS3ClientProperties();
 	}
 }

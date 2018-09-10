@@ -17,16 +17,29 @@ package jp.xet.spring.aws.autoconfigure;
 
 import java.lang.reflect.UndeclaredThrowableException;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.config.AbstractFactoryBean;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.ConstructorArgumentValues;
+import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
+
 
 /**
  * TODO miyamoto.daisuke.
@@ -62,11 +75,6 @@ public class AwsClientBeanRegistrar
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 		log.trace("postProcessBeanDefinitionRegistry");
-	}
-	
-	@Override
-	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		log.trace("postProcessBeanFactory");
 		
 		if (syncEnabled == false) {
 			log.debug("AWS sync client is disabled.");
@@ -74,10 +82,15 @@ public class AwsClientBeanRegistrar
 		if (asyncEnabled == false) {
 			log.debug("AWS async client is disabled.");
 		}
-		AwsClientBuilderLoader.loadBuilderNames().forEach(n -> registerAwsClient(beanFactory, n));
+		AwsClientBuilderLoader.loadBuilderNames().forEach(n -> registerAwsClient(registry, n));
 	}
 	
-	private void registerAwsClient(ConfigurableListableBeanFactory beanFactory, String builderClassName) {
+	@Override
+	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+		log.trace("postProcessBeanFactory");
+	}
+	
+	private void registerAwsClient(BeanDefinitionRegistry registry, String builderClassName) {
 		try {
 			log.trace("Attempt to configure AWS client: {}", builderClassName);
 			if (syncEnabled == false && builderClassName.endsWith("AsyncClientBuilder") == false) {
@@ -95,16 +108,27 @@ public class AwsClientBeanRegistrar
 			Class<?> builderClass = Class.forName(builderClassName);
 			Class<?> clientClass = AwsClientUtil.getClientClass(builderClass);
 			
-			if (beanFactory.containsBeanDefinition(clientClass.getName())) {
+			if (registry.containsBeanDefinition(clientClass.getName())) {
 				log.debug("Skip {} -- already configured", clientClass.getName());
 				return;
 			}
 			
-			Object builder = AwsClientUtil.createBuilder(builderClass);
-			awsClientBuilderConfigurer.configureBuilder(builderClassName, clientClass, builder);
-			Object client = AwsClientUtil.buildClient(builder);
+			RootBeanDefinition configurerBeanDefinition = new RootBeanDefinition(AwsClientBuilderConfigurer.class);
+			registry.registerBeanDefinition(clientClass.getName()+"Configurer", configurerBeanDefinition);
 			
-			beanFactory.registerSingleton(clientClass.getName(), client);
+			
+			RootBeanDefinition clientBeanDef = new RootBeanDefinition();
+			clientBeanDef.setTargetType(clientClass);
+			clientBeanDef.setBeanClass(AwsClientFactoryBean.class);
+			ConstructorArgumentValues ctorArgs = new ConstructorArgumentValues();
+			ctorArgs.addIndexedArgumentValue(0, builderClass);
+			ctorArgs.addIndexedArgumentValue(1, clientClass);
+			ctorArgs.addIndexedArgumentValue(2, new RuntimeBeanReference(clientClass.getName() + "Configurer"));
+			clientBeanDef.getConstructorArgumentValues().addArgumentValues(ctorArgs);
+			
+			BeanDefinitionHolder holder = new BeanDefinitionHolder(clientBeanDef, clientClass.getName());
+			BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
+			
 			log.trace("AWS client {} is configured", clientClass.getName());
 		} catch (ClassNotFoundException e) {
 			log.trace("Skip.  Builder class is not found in classpath: {}", builderClassName);
@@ -115,6 +139,29 @@ public class AwsClientBeanRegistrar
 		} catch (ClientClassNotDeterminedException | IllegalStateException | UndeclaredThrowableException e) {
 			log.error("Illegal builder: {}", builderClassName, e);
 			throw e;
+		}
+	}
+	
+	@RequiredArgsConstructor
+	static class AwsClientFactoryBean<T> extends AbstractFactoryBean<T> {
+		
+		private final Class<?> builderClass;
+		
+		private final Class<T> clientClass;
+		
+		private final AwsClientBuilderConfigurer awsClientBuilderConfigurer;
+		
+		@Override
+		public Class<?> getObjectType() {
+			return clientClass;
+		}
+		
+		@Override
+		protected T createInstance() throws Exception {
+			Object builder = AwsClientUtil.createBuilder(builderClass);
+			awsClientBuilderConfigurer.configureBuilder(builderClass.getName(), clientClass, builder);
+			Object client = AwsClientUtil.buildClient(builder);
+			return (T) client;
 		}
 	}
 }
