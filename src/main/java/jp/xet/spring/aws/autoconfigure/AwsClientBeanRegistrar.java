@@ -29,8 +29,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
 
 /**
  * TODO miyamoto.daisuke.

@@ -39,8 +39,8 @@ import org.springframework.core.env.Environment;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsConfigurationPropertiesConfiguration.AwsClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsConfigurationPropertiesConfiguration.AwsS3ClientProperties;
 
 /**
  * Spring configuration class to configure AWS client builders.
