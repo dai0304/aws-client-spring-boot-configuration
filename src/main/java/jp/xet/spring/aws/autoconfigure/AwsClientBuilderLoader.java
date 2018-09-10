@@ -41,7 +41,7 @@ class AwsClientBuilderLoader {
 	 * 
 	 * <p>Can be present in multiple JAR files.</p>
 	 */
-	public static final String DEFAULT_LOCATION = "META-INF/aws.builders";
+	static final String DEFAULT_LOCATION = "META-INF/aws.builders";
 	
 	@Setter
 	private static String location = DEFAULT_LOCATION;
@@ -53,7 +53,7 @@ class AwsClientBuilderLoader {
 	 *
 	 * @throws UncheckedIOException if an error occurs while loading builder names
 	 */
-	public static Set<String> loadBuilderNames() {
+	static Set<String> loadBuilderNames() {
 		return loadBuilderNames(null);
 	}
 	
@@ -64,7 +64,7 @@ class AwsClientBuilderLoader {
 	 * @param classLoader the ClassLoader to use for loading resources; can be {@code null} to use the default
 	 * @throws UncheckedIOException if an error occurs while loading builder names
 	 */
-	private static Set<String> loadBuilderNames(ClassLoader classLoader) {
+	static Set<String> loadBuilderNames(ClassLoader classLoader) {
 		Set<String> result = CACHE.get(classLoader);
 		if (result != null) {
 			return result;

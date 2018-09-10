@@ -19,9 +19,7 @@ import java.util.HashMap;
 
 import lombok.Data;
 
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -86,13 +84,8 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 public class AwsAutoConfiguration {
 	
 	@Bean
-	public static AwsClientBeanRegistrar awsClientRegisterer(ApplicationContext applicationContext,
-			ConfigurableBeanFactory beanFactory, ConfigurableEnvironment environment) throws Exception { // NOPMD
-		AwsClientPropertiesMap awsClientPropertiesMap = awsClientPropertiesMap();
-		AwsS3ClientProperties awsS3ClientProperties = awsS3ClientProperties();
-		AwsClientBuilderConfigurer awsClientBuilderConfigurer =
-				new AwsClientBuilderConfigurer(beanFactory, awsClientPropertiesMap, awsS3ClientProperties);
-		return new AwsClientBeanRegistrar(environment, awsClientBuilderConfigurer);
+	public static AwsClientBeanRegistrar awsClientRegisterer(ConfigurableEnvironment environment) {
+		return new AwsClientBeanRegistrar(environment);
 	}
 	
 	@Bean
@@ -108,7 +101,7 @@ public class AwsAutoConfiguration {
 	
 	@SuppressWarnings("serial")
 	@ConfigurationProperties(value = "aws", ignoreInvalidFields = true)
-	static class AwsClientPropertiesMap extends HashMap<String, AwsClientProperties> {
+	private static class AwsClientPropertiesMap extends HashMap<String, AwsClientProperties> {
 	}
 	
 	@Data

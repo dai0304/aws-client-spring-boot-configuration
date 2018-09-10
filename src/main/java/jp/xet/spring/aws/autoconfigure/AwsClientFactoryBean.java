@@ -23,7 +23,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.beans.factory.config.AbstractFactoryBean;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -39,7 +39,7 @@ import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientPropertie
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AwsClientBuilderConfigurer {
+public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	private static final String DEFAULT_NAME = "default";
 	
@@ -76,16 +76,23 @@ public class AwsClientBuilderConfigurer {
 	}
 	
 	
-	private final ConfigurableBeanFactory beanFactory;
+	private final Class<?> builderClass;
+	
+	private final Class<T> clientClass;
 	
 	private final Map<String, AwsClientProperties> awsClientPropertiesMap;
 	
 	private final AwsS3ClientProperties awsS3ClientProperties;
 	
 	
+	@Override
+	public Class<?> getObjectType() {
+		return clientClass;
+	}
+	
 	boolean isConfigurable(String builderClassName) {
 		if (builderClassName.equals(ENCRYPTION_CLIENT_BUILDER)
-				&& beanFactory.containsBean(ENCRYPTION_MATERIALS_PROVIDER) == false) {
+				&& getBeanFactory().containsBean(ENCRYPTION_MATERIALS_PROVIDER) == false) {
 			log.debug("Skip " + ENCRYPTION_CLIENT_BUILDER + " -- " + ENCRYPTION_MATERIALS_PROVIDER
 					+ " is not configured");
 			return false;
@@ -93,9 +100,16 @@ public class AwsClientBuilderConfigurer {
 		return true;
 	}
 	
-	boolean configureBuilder(String builderClassName, Class<?> clientClass, Object builder) {
-		if (builderClassName.startsWith("com.amazonaws.services.s3.")) {
-			configureAmazonS3ClientBuilder(builderClassName, builder);
+	@Override
+	protected T createInstance() throws Exception {
+		Object builder = AwsClientUtil.createBuilder(builderClass);
+		
+		if (isConfigurable(builderClass.getName()) == false) {
+			return null;
+		}
+		
+		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {
+			configureAmazonS3ClientBuilder(builder);
 		}
 		
 		Optional<AwsClientProperties> specificConfig = getAwsClientProperties(awsClientPropertiesMap, clientClass);
@@ -109,20 +123,24 @@ public class AwsClientBuilderConfigurer {
 			.orElseGet(() -> defaultConfig.map(AwsClientProperties::getEndpoint).orElse(null));
 		if (endpointConfiguration != null) {
 			AwsClientUtil.configureEndpointConfiguration(builder, endpointConfiguration);
-			return true;
+		} else {
+			String region = specificConfig.map(AwsClientProperties::getRegion)
+				.orElseGet(() -> defaultConfig.map(AwsClientProperties::getRegion).orElse(null));
+			if (region != null) {
+				AwsClientUtil.configureRegion(builder, region);
+			}
 		}
 		
-		String region = specificConfig.map(AwsClientProperties::getRegion)
-			.orElseGet(() -> defaultConfig.map(AwsClientProperties::getRegion).orElse(null));
-		if (region != null) {
-			AwsClientUtil.configureRegion(builder, region);
-		}
-		
-		return specificConfig.map(AwsClientProperties::isEnabled)
+		Boolean enabled = specificConfig.map(AwsClientProperties::isEnabled)
 			.orElseGet(() -> defaultConfig.map(AwsClientProperties::isEnabled).orElse(true));
+		if (enabled) {
+			return AwsClientUtil.buildClient(builder);
+		} else {
+			return null;
+		}
 	}
 	
-	private void configureAmazonS3ClientBuilder(String builderClassName, Object builder) {
+	private void configureAmazonS3ClientBuilder(Object builder) {
 		try {
 			if (Class.forName(S3_BUILDER).isAssignableFrom(builder.getClass())) {
 				invokeMethod(builder, "setPathStyleAccessEnabled", awsS3ClientProperties.getPathStyleAccessEnabled());
@@ -137,10 +155,10 @@ public class AwsClientBuilderConfigurer {
 			log.warn(S3_BUILDER + " is not found in classpath -- ignored", e);
 		}
 		
-		if (builderClassName.equals(ENCRYPTION_CLIENT_BUILDER)
-				&& beanFactory.containsBean(ENCRYPTION_MATERIALS_PROVIDER)) {
+		if (builderClass.getName().equals(ENCRYPTION_CLIENT_BUILDER)
+				&& getBeanFactory().containsBean(ENCRYPTION_MATERIALS_PROVIDER)) {
 			try {
-				Object encryptionMaterial = beanFactory.getBean(ENCRYPTION_MATERIALS_PROVIDER);
+				Object encryptionMaterial = getBeanFactory().getBean(ENCRYPTION_MATERIALS_PROVIDER);
 				invokeMethod(builder, "setEncryptionMaterials", encryptionMaterial);
 			} catch (IllegalStateException e) {
 				log.warn(ENCRYPTION_MATERIALS_PROVIDER + " is not found in classpath -- ignored", e);
