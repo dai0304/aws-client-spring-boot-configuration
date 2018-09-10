@@ -51,7 +51,12 @@ public class AwsAutoConfigurationIntegrationTest {
 	@RequiredArgsConstructor
 	static class TestApplication implements CommandLineRunner {
 		
-		public static void main(String[] args) {
+		/**
+		 * Entry point.
+		 * 
+		 * @param args command line arguments
+		 */
+		public static void main(String[] args) { // -@cs[UncommentedMain]
 			SpringApplication.run(TestApplication.class, args);
 		}
 		

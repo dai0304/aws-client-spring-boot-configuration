@@ -22,7 +22,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -84,7 +84,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 public class AwsAutoConfiguration {
 	
 	@Bean
-	public static AwsClientBeanRegistrar awsClientRegisterer(ConfigurableEnvironment environment) {
+	public static AwsClientBeanRegistrar awsClientRegisterer(Environment environment) {
 		return new AwsClientBeanRegistrar(environment);
 	}
 	

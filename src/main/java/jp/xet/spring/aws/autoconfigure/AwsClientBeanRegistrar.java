@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
@@ -31,7 +30,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.Ordered;
-import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 
 /**
  * TODO miyamoto.daisuke.
@@ -41,14 +40,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AwsClientBeanRegistrar
-		implements BeanDefinitionRegistryPostProcessor, Ordered, InitializingBean {
+public class AwsClientBeanRegistrar implements BeanDefinitionRegistryPostProcessor, Ordered {
 	
-	private final ConfigurableEnvironment environment;
-	
-	private boolean syncEnabled = true;
-	
-	private boolean asyncEnabled;
+	private final Environment environment;
 	
 	
 	@Override
@@ -57,14 +51,11 @@ public class AwsClientBeanRegistrar
 	}
 	
 	@Override
-	public void afterPropertiesSet() throws Exception {
-		syncEnabled = Boolean.valueOf(environment.getProperty("aws.sync-enabled", "true"));
-		asyncEnabled = Boolean.valueOf(environment.getProperty("aws.async-enabled", "false"));
-	}
-	
-	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
-		log.trace("postProcessBeanDefinitionRegistry");
+		log.trace("postProcessBeanDefinitionRegistry: {}", registry);
+		
+		boolean syncEnabled = Boolean.valueOf(environment.getProperty("aws.sync-enabled", "true"));
+		boolean asyncEnabled = Boolean.valueOf(environment.getProperty("aws.async-enabled", "false"));
 		
 		if (syncEnabled == false) {
 			log.debug("AWS sync client is disabled.");
@@ -72,7 +63,9 @@ public class AwsClientBeanRegistrar
 		if (asyncEnabled == false) {
 			log.debug("AWS async client is disabled.");
 		}
-		AwsClientBuilderLoader.loadBuilderNames().forEach(n -> registerAwsClient(registry, n));
+		
+		AwsClientBuilderLoader.loadBuilderNames(syncEnabled, asyncEnabled)
+				.forEach(n -> registerAwsClient(registry, n));
 	}
 	
 	@Override
@@ -83,17 +76,9 @@ public class AwsClientBeanRegistrar
 	private void registerAwsClient(BeanDefinitionRegistry registry, String builderClassName) {
 		try {
 			log.trace("Attempt to configure AWS client: {}", builderClassName);
-			if (syncEnabled == false && builderClassName.endsWith("AsyncClientBuilder") == false) {
-				log.trace("Skip {} -- sync client is disabled.", builderClassName);
+			if (AwsClientFactoryBean.isConfigurable(registry, builderClassName) == false) {
 				return;
 			}
-			if (asyncEnabled == false && builderClassName.endsWith("AsyncClientBuilder")) {
-				log.trace("Skip {} -- async client is disabled", builderClassName);
-				return;
-			}
-//			if (awsClientBuilderConfigurer.isConfigurable(builderClassName) == false) {
-//				return;
-//			}
 			
 			Class<?> builderClass = Class.forName(builderClassName);
 			Class<?> clientClass = AwsClientUtil.getClientClass(builderClass);
@@ -103,17 +88,7 @@ public class AwsClientBeanRegistrar
 				return;
 			}
 			
-			// register client factory bean
-			RootBeanDefinition clientBeanDef = new RootBeanDefinition();
-			clientBeanDef.setTargetType(clientClass);
-			clientBeanDef.setBeanClass(AwsClientFactoryBean.class);
-			ConstructorArgumentValues ctorArgs = new ConstructorArgumentValues();
-			ctorArgs.addIndexedArgumentValue(0, builderClass);
-			ctorArgs.addIndexedArgumentValue(1, clientClass);
-			ctorArgs.addIndexedArgumentValue(2, new RuntimeBeanReference("awsClientPropertiesMap"));
-			ctorArgs.addIndexedArgumentValue(3, new RuntimeBeanReference("awsS3ClientProperties"));
-			clientBeanDef.getConstructorArgumentValues().addArgumentValues(ctorArgs);
-			
+			RootBeanDefinition clientBeanDef = createAwsClientBeanDefinition(builderClass, clientClass);
 			BeanDefinitionHolder clientBDHolder = new BeanDefinitionHolder(clientBeanDef, clientClass.getName());
 			BeanDefinitionReaderUtils.registerBeanDefinition(clientBDHolder, registry);
 			
@@ -125,5 +100,18 @@ public class AwsClientBeanRegistrar
 			log.error("Illegal builder: {}", builderClassName, e);
 			throw e;
 		}
+	}
+	
+	private RootBeanDefinition createAwsClientBeanDefinition(Class<?> builderClass, Class<?> clientClass) {
+		ConstructorArgumentValues ctorArgs = new ConstructorArgumentValues();
+		ctorArgs.addIndexedArgumentValue(0, builderClass);
+		ctorArgs.addIndexedArgumentValue(1, clientClass);
+		ctorArgs.addIndexedArgumentValue(2, new RuntimeBeanReference("awsClientPropertiesMap"));
+		ctorArgs.addIndexedArgumentValue(3, new RuntimeBeanReference("awsS3ClientProperties"));
+		
+		RootBeanDefinition clientBeanDef = new RootBeanDefinition(AwsClientFactoryBean.class);
+		clientBeanDef.setTargetType(clientClass);
+		clientBeanDef.setConstructorArgumentValues(ctorArgs);
+		return clientBeanDef;
 	}
 }

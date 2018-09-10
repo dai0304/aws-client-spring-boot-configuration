@@ -25,6 +25,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -53,8 +54,11 @@ class AwsClientBuilderLoader {
 	 *
 	 * @throws UncheckedIOException if an error occurs while loading builder names
 	 */
-	static Set<String> loadBuilderNames() {
-		return loadBuilderNames(null);
+	static Set<String> loadBuilderNames(boolean syncEnabled, boolean asyncEnabled) {
+		return loadBuilderNames(null).stream()
+				.filter(n -> asyncEnabled || n.endsWith("AsyncClientBuilder") == false)
+				.filter(n -> syncEnabled || n.endsWith("AsyncClientBuilder"))
+				.collect(Collectors.toSet());
 	}
 	
 	/**

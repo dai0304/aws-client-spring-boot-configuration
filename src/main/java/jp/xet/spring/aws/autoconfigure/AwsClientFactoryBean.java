@@ -23,7 +23,9 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -34,6 +36,7 @@ import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientPropertie
 /**
  * Spring configuration class to configure AWS client builders.
  *
+ * @param <T> type of AWS client
  * @author miyamoto.daisuke
  * @since #version#
  */
@@ -90,9 +93,9 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 		return clientClass;
 	}
 	
-	boolean isConfigurable(String builderClassName) {
+	static boolean isConfigurable(BeanDefinitionRegistry registry, String builderClassName) {
 		if (builderClassName.equals(ENCRYPTION_CLIENT_BUILDER)
-				&& getBeanFactory().containsBean(ENCRYPTION_MATERIALS_PROVIDER) == false) {
+				&& registry.containsBeanDefinition(ENCRYPTION_MATERIALS_PROVIDER) == false) {
 			log.debug("Skip " + ENCRYPTION_CLIENT_BUILDER + " -- " + ENCRYPTION_MATERIALS_PROVIDER
 					+ " is not configured");
 			return false;
@@ -103,10 +106,6 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 	@Override
 	protected T createInstance() throws Exception {
 		Object builder = AwsClientUtil.createBuilder(builderClass);
-		
-		if (isConfigurable(builderClass.getName()) == false) {
-			return null;
-		}
 		
 		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {
 			configureAmazonS3ClientBuilder(builder);
@@ -136,7 +135,7 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 		if (enabled) {
 			return AwsClientUtil.buildClient(builder);
 		} else {
-			return null;
+			throw new RuntimeException("disabled");
 		}
 	}
 	
@@ -155,13 +154,15 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 			log.warn(S3_BUILDER + " is not found in classpath -- ignored", e);
 		}
 		
-		if (builderClass.getName().equals(ENCRYPTION_CLIENT_BUILDER)
-				&& getBeanFactory().containsBean(ENCRYPTION_MATERIALS_PROVIDER)) {
-			try {
-				Object encryptionMaterial = getBeanFactory().getBean(ENCRYPTION_MATERIALS_PROVIDER);
-				invokeMethod(builder, "setEncryptionMaterials", encryptionMaterial);
-			} catch (IllegalStateException e) {
-				log.warn(ENCRYPTION_MATERIALS_PROVIDER + " is not found in classpath -- ignored", e);
+		if (builderClass.getName().equals(ENCRYPTION_CLIENT_BUILDER)) {
+			BeanFactory beanFactory = getBeanFactory();
+			if (beanFactory != null && beanFactory.containsBean(ENCRYPTION_MATERIALS_PROVIDER)) {
+				try {
+					Object encryptionMaterial = beanFactory.getBean(ENCRYPTION_MATERIALS_PROVIDER);
+					invokeMethod(builder, "setEncryptionMaterials", encryptionMaterial);
+				} catch (IllegalStateException e) {
+					log.warn(ENCRYPTION_MATERIALS_PROVIDER + " is not found in classpath -- ignored", e);
+				}
 			}
 		}
 	}

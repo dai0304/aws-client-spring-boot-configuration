@@ -35,7 +35,7 @@ public class AwsClientBuilderLoaderTest {
 	@Test
 	public void testLoadBuilderNames() {
 		// exercise
-		Set<String> actual = AwsClientBuilderLoader.loadBuilderNames();
+		Set<String> actual = AwsClientBuilderLoader.loadBuilderNames(true, true);
 		// verify
 		assertThat(actual).contains(
 				"com.amazonaws.services.s3.AmazonS3ClientBuilder",
@@ -46,5 +46,29 @@ public class AwsClientBuilderLoaderTest {
 				"com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder",
 				"com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder",
 				"com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancingClientBuilder");
+	}
+	
+	@Test
+	public void testLoadBuilderNames_Sync() {
+		// exercise
+		Set<String> actual = AwsClientBuilderLoader.loadBuilderNames(true, false);
+		// verify
+		assertThat(actual).contains(
+				"com.amazonaws.services.s3.AmazonS3ClientBuilder",
+				"com.amazonaws.services.sqs.AmazonSQSClientBuilder",
+				"com.amazonaws.services.sns.AmazonSNSClientBuilder",
+				"com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder",
+				"com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder",
+				"com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancingClientBuilder");
+	}
+	
+	@Test
+	public void testLoadBuilderNames_Async() {
+		// exercise
+		Set<String> actual = AwsClientBuilderLoader.loadBuilderNames(false, true);
+		// verify
+		assertThat(actual).contains(
+				"com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder",
+				"com.amazonaws.services.sns.AmazonSNSAsyncClientBuilder");
 	}
 }
