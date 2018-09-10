@@ -16,7 +16,6 @@
 package jp.xet.spring.aws.autoconfigure;
 
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
-
 
 /**
  * TODO miyamoto.daisuke.

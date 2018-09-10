@@ -17,30 +17,20 @@ package jp.xet.spring.aws.autoconfigure;
 
 import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeMethod;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.EnvironmentAware;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Environment;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
-import jp.xet.spring.aws.autoconfigure.AwsConfigurationPropertiesConfiguration.AwsClientProperties;
-import jp.xet.spring.aws.autoconfigure.AwsConfigurationPropertiesConfiguration.AwsS3ClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientPropertiesMap;
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
 
 /**
  * Spring configuration class to configure AWS client builders.
@@ -58,7 +48,8 @@ public class AwsClientBuilderConfigurer {
 	
 	private static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
 	
-	private static final String ENCRYPTION_MATERIALS_PROVIDER = "com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
+	private static final String ENCRYPTION_MATERIALS_PROVIDER =
+			"com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
 	
 	
 	private static Optional<AwsClientProperties> getAwsClientProperties(
@@ -88,8 +79,6 @@ public class AwsClientBuilderConfigurer {
 	
 	private final ConfigurableBeanFactory beanFactory;
 	
-	private final ConfigurableEnvironment environment;
-	
 	private final Map<String, AwsClientProperties> awsClientPropertiesMap;
 	
 	private final AwsS3ClientProperties awsS3ClientProperties;
@@ -110,9 +99,8 @@ public class AwsClientBuilderConfigurer {
 			configureAmazonS3ClientBuilder(builderClassName, builder);
 		}
 		
-		Map<String, AwsClientProperties> map = awsClientPropertiesMap;
-		Optional<AwsClientProperties> specificConfig = getAwsClientProperties(map, clientClass);
-		Optional<AwsClientProperties> defaultConfig = Optional.ofNullable(map.get(DEFAULT_NAME));
+		Optional<AwsClientProperties> specificConfig = getAwsClientProperties(awsClientPropertiesMap, clientClass);
+		Optional<AwsClientProperties> defaultConfig = Optional.ofNullable(awsClientPropertiesMap.get(DEFAULT_NAME));
 		
 		ClientConfiguration clientConfiguration = specificConfig.map(AwsClientProperties::getClient)
 			.orElseGet(() -> defaultConfig.map(AwsClientProperties::getClient).orElse(null));
