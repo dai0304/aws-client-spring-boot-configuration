@@ -135,7 +135,7 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 		if (enabled) {
 			return AwsClientUtil.buildClient(builder);
 		} else {
-			throw new RuntimeException("disabled");
+			throw new RuntimeException("disabled"); // TODO NOPMD
 		}
 	}
 	
