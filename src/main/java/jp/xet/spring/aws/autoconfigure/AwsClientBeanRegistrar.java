@@ -16,6 +16,7 @@
 package jp.xet.spring.aws.autoconfigure;
 
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,9 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
 
 /**
  * TODO miyamoto.daisuke.
@@ -45,7 +49,7 @@ public class AwsClientBeanRegistrar
 	
 	private boolean asyncEnabled;
 	
-	private final AwsClientBuilderConfiguration awsClientBuilderConfiguration;
+	private final AwsClientBuilderConfigurer awsClientBuilderConfigurer;
 	
 	
 	@Override
@@ -88,7 +92,7 @@ public class AwsClientBeanRegistrar
 				log.trace("Skip {} -- async client is disabled", builderClassName);
 				return;
 			}
-			if (awsClientBuilderConfiguration.isConfigurable(builderClassName) == false) {
+			if (awsClientBuilderConfigurer.isConfigurable(builderClassName) == false) {
 				return;
 			}
 			
@@ -101,7 +105,7 @@ public class AwsClientBeanRegistrar
 			}
 			
 			Object builder = AwsClientUtil.createBuilder(builderClass);
-			awsClientBuilderConfiguration.configureBuilder(builderClassName, clientClass, builder);
+			awsClientBuilderConfigurer.configureBuilder(builderClassName, clientClass, builder);
 			Object client = AwsClientUtil.buildClient(builder);
 			
 			beanFactory.registerSingleton(clientClass.getName(), client);

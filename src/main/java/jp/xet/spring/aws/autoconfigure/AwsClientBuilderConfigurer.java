@@ -39,6 +39,9 @@ import org.springframework.core.env.Environment;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
+
 /**
  * Spring configuration class to configure AWS client builders.
  *
@@ -47,8 +50,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
  */
 @Slf4j
 @RequiredArgsConstructor
-@Configuration
-public class AwsClientBuilderConfiguration implements BeanFactoryAware, EnvironmentAware {
+public class AwsClientBuilderConfigurer {
 	
 	private static final String DEFAULT_NAME = "default";
 	
@@ -84,20 +86,14 @@ public class AwsClientBuilderConfiguration implements BeanFactoryAware, Environm
 	}
 	
 	
-	private ConfigurableBeanFactory beanFactory;
+	private final ConfigurableBeanFactory beanFactory;
 	
-	private ConfigurableEnvironment environment;
+	private final ConfigurableEnvironment environment;
 	
+	private final Map<String, AwsClientProperties> awsClientPropertiesMap;
 	
-	@Override
-	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-		this.beanFactory = (ConfigurableBeanFactory) beanFactory;
-	}
+	private final AwsS3ClientProperties awsS3ClientProperties;
 	
-	@Override
-	public void setEnvironment(Environment environment) {
-		this.environment = (ConfigurableEnvironment) environment;
-	}
 	
 	boolean isConfigurable(String builderClassName) {
 		if (builderClassName.equals(ENCRYPTION_CLIENT_BUILDER)
@@ -114,7 +110,7 @@ public class AwsClientBuilderConfiguration implements BeanFactoryAware, Environm
 			configureAmazonS3ClientBuilder(builderClassName, builder);
 		}
 		
-		Map<String, AwsClientProperties> map = awsClientPropertiesMap();
+		Map<String, AwsClientProperties> map = awsClientPropertiesMap;
 		Optional<AwsClientProperties> specificConfig = getAwsClientProperties(map, clientClass);
 		Optional<AwsClientProperties> defaultConfig = Optional.ofNullable(map.get(DEFAULT_NAME));
 		
@@ -145,14 +141,13 @@ public class AwsClientBuilderConfiguration implements BeanFactoryAware, Environm
 	private void configureAmazonS3ClientBuilder(String builderClassName, Object builder) {
 		try {
 			if (Class.forName(S3_BUILDER).isAssignableFrom(builder.getClass())) {
-				AwsS3ClientProperties s3Config = awsS3ClientProperties();
-				invokeMethod(builder, "setPathStyleAccessEnabled", s3Config.getPathStyleAccessEnabled());
-				invokeMethod(builder, "setChunkedEncodingDisabled", s3Config.getChunkedEncodingDisabled());
-				invokeMethod(builder, "setAccelerateModeEnabled", s3Config.getAccelerateModeEnabled());
-				invokeMethod(builder, "setPayloadSigningEnabled", s3Config.getPayloadSigningEnabled());
-				invokeMethod(builder, "setDualstackEnabled", s3Config.getDualstackEnabled());
+				invokeMethod(builder, "setPathStyleAccessEnabled", awsS3ClientProperties.getPathStyleAccessEnabled());
+				invokeMethod(builder, "setChunkedEncodingDisabled", awsS3ClientProperties.getChunkedEncodingDisabled());
+				invokeMethod(builder, "setAccelerateModeEnabled", awsS3ClientProperties.getAccelerateModeEnabled());
+				invokeMethod(builder, "setPayloadSigningEnabled", awsS3ClientProperties.getPayloadSigningEnabled());
+				invokeMethod(builder, "setDualstackEnabled", awsS3ClientProperties.getDualstackEnabled());
 				invokeMethod(builder, "setForceGlobalBucketAccessEnabled",
-						s3Config.getForceGlobalBucketAccessEnabled());
+						awsS3ClientProperties.getForceGlobalBucketAccessEnabled());
 			}
 		} catch (ClassNotFoundException e) {
 			log.warn(S3_BUILDER + " is not found in classpath -- ignored", e);
@@ -167,71 +162,5 @@ public class AwsClientBuilderConfiguration implements BeanFactoryAware, Environm
 				log.warn(ENCRYPTION_MATERIALS_PROVIDER + " is not found in classpath -- ignored", e);
 			}
 		}
-	}
-	
-	@Bean
-	@ConfigurationProperties(value = "aws", ignoreInvalidFields = true)
-	public Map<String, AwsClientProperties> awsClientPropertiesMap() {
-		return new HashMap<>();
-	}
-	
-	@Bean
-	public AwsS3ClientProperties awsS3ClientProperties() {
-		return new AwsS3ClientProperties();
-	}
-	
-	
-	@Data
-	private static class AwsClientProperties {
-		
-		private ClientConfiguration client;
-		
-		private MutableEndpointConfiguration endpoint;
-		
-		private String region;
-		
-		private boolean enabled = true;
-		
-		
-		private EndpointConfiguration getEndpoint() {
-			return endpoint == null ? null : endpoint.toEndpointConfiguration();
-		}
-	}
-	
-	/**
-	 * @see <a href="https://github.com/spring-projects/spring-boot/issues/8762">spring-boot#8762</a>
-	 */
-	@Data
-	private static class MutableEndpointConfiguration {
-		
-		private String serviceEndpoint;
-		
-		private String signingRegion;
-		
-		
-		EndpointConfiguration toEndpointConfiguration() {
-			if (serviceEndpoint != null) {
-				return new EndpointConfiguration(serviceEndpoint, signingRegion);
-			}
-			return null;
-		}
-	}
-	
-	@Data
-	@ConfigurationProperties(value = "aws.s3", ignoreInvalidFields = true)
-	private static class AwsS3ClientProperties {
-		
-		private Boolean pathStyleAccessEnabled;
-		
-		private Boolean chunkedEncodingDisabled;
-		
-		private Boolean accelerateModeEnabled;
-		
-		private Boolean payloadSigningEnabled;
-		
-		private Boolean dualstackEnabled;
-		
-		private Boolean forceGlobalBucketAccessEnabled;
-		
 	}
 }

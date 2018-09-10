@@ -15,14 +15,21 @@
  */
 package jp.xet.spring.aws.autoconfigure;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 /**
  * Spring auto-configuration for AWS Clients.
@@ -78,13 +85,81 @@ import com.amazonaws.ClientConfiguration;
  * @since #version#
  */
 @Configuration
-@Import(AwsClientBuilderConfiguration.class)
+@Import(AwsClientBuilderConfigurer.class)
 @Slf4j
 public class AwsAutoConfiguration {
 	
 	@Bean
-	public static AwsClientBeanRegistrar awsClientRegistrer(
-			ConfigurableEnvironment environment, AwsClientBuilderConfiguration awsClientBuilderConfiguration) {
-		return new AwsClientBeanRegistrar(environment, awsClientBuilderConfiguration);
+	public AwsClientBeanRegistrar awsClientRegisterer(
+			ConfigurableBeanFactory beanFactory, ConfigurableEnvironment environment) {
+		return new AwsClientBeanRegistrar(environment, 
+				new AwsClientBuilderConfigurer(beanFactory, environment, awsClientPropertiesMap(), awsS3ClientProperties()));
+	}
+	
+	
+	@Bean
+	@ConfigurationProperties(value = "aws", ignoreInvalidFields = true)
+	public Map<String, AwsClientProperties> awsClientPropertiesMap() {
+		return new HashMap<>();
+	}
+	
+	@Bean
+	public AwsS3ClientProperties awsS3ClientProperties() {
+		return new AwsS3ClientProperties();
+	}
+	
+	
+	@Data
+	static class AwsClientProperties {
+		
+		private ClientConfiguration client;
+		
+		private MutableEndpointConfiguration endpoint;
+		
+		private String region;
+		
+		private boolean enabled = true;
+		
+		
+		EndpointConfiguration getEndpoint() {
+			return endpoint == null ? null : endpoint.toEndpointConfiguration();
+		}
+	}
+	
+	/**
+	 * @see <a href="https://github.com/spring-projects/spring-boot/issues/8762">spring-boot#8762</a>
+	 */
+	@Data
+	static class MutableEndpointConfiguration {
+		
+		private String serviceEndpoint;
+		
+		private String signingRegion;
+		
+		
+		EndpointConfiguration toEndpointConfiguration() {
+			if (serviceEndpoint != null) {
+				return new EndpointConfiguration(serviceEndpoint, signingRegion);
+			}
+			return null;
+		}
+	}
+	
+	@Data
+	@ConfigurationProperties(value = "aws.s3", ignoreInvalidFields = true)
+	static class AwsS3ClientProperties {
+		
+		private Boolean pathStyleAccessEnabled;
+		
+		private Boolean chunkedEncodingDisabled;
+		
+		private Boolean accelerateModeEnabled;
+		
+		private Boolean payloadSigningEnabled;
+		
+		private Boolean dualstackEnabled;
+		
+		private Boolean forceGlobalBucketAccessEnabled;
+		
 	}
 }
