@@ -65,7 +65,7 @@ public class AwsClientBeanRegistrar implements BeanDefinitionRegistryPostProcess
 		}
 		
 		AwsClientBuilderLoader.loadBuilderNames(syncEnabled, asyncEnabled)
-				.forEach(n -> registerAwsClient(registry, n));
+			.forEach(n -> registerAwsClient(registry, n));
 	}
 	
 	@Override

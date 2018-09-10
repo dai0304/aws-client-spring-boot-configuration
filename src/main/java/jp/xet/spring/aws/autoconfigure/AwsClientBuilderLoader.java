@@ -56,9 +56,9 @@ class AwsClientBuilderLoader {
 	 */
 	static Set<String> loadBuilderNames(boolean syncEnabled, boolean asyncEnabled) {
 		return loadBuilderNames(null).stream()
-				.filter(n -> asyncEnabled || n.endsWith("AsyncClientBuilder") == false)
-				.filter(n -> syncEnabled || n.endsWith("AsyncClientBuilder"))
-				.collect(Collectors.toSet());
+			.filter(n -> asyncEnabled || n.endsWith("AsyncClientBuilder") == false)
+			.filter(n -> syncEnabled || n.endsWith("AsyncClientBuilder"))
+			.collect(Collectors.toSet());
 	}
 	
 	/**
