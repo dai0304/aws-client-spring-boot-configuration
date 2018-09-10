@@ -17,29 +17,22 @@ package jp.xet.spring.aws.autoconfigure;
 
 import java.lang.reflect.UndeclaredThrowableException;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
-import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
-
 
 /**
  * TODO miyamoto.daisuke.
@@ -87,7 +80,7 @@ public class AwsClientBeanRegistrar
 	
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		log.trace("postProcessBeanFactory");
+		// do nothing
 	}
 	
 	private void registerAwsClient(BeanDefinitionRegistry registry, String builderClassName) {
@@ -113,21 +106,24 @@ public class AwsClientBeanRegistrar
 				return;
 			}
 			
-			RootBeanDefinition configurerBeanDefinition = new RootBeanDefinition(AwsClientBuilderConfigurer.class);
-			registry.registerBeanDefinition(clientClass.getName()+"Configurer", configurerBeanDefinition);
+			// register configurer
+			String configurerBeanName = clientClass.getName() + "Configurer";
+			RootBeanDefinition configurerBeanDef = new RootBeanDefinition(AwsClientBuilderConfigurer.class);
+			BeanDefinitionHolder configurerBDHolder = new BeanDefinitionHolder(configurerBeanDef, configurerBeanName);
+			BeanDefinitionReaderUtils.registerBeanDefinition(configurerBDHolder, registry);
 			
-			
+			// register client factory bean
 			RootBeanDefinition clientBeanDef = new RootBeanDefinition();
 			clientBeanDef.setTargetType(clientClass);
 			clientBeanDef.setBeanClass(AwsClientFactoryBean.class);
 			ConstructorArgumentValues ctorArgs = new ConstructorArgumentValues();
 			ctorArgs.addIndexedArgumentValue(0, builderClass);
 			ctorArgs.addIndexedArgumentValue(1, clientClass);
-			ctorArgs.addIndexedArgumentValue(2, new RuntimeBeanReference(clientClass.getName() + "Configurer"));
+			ctorArgs.addIndexedArgumentValue(2, new RuntimeBeanReference(configurerBeanName));
 			clientBeanDef.getConstructorArgumentValues().addArgumentValues(ctorArgs);
 			
-			BeanDefinitionHolder holder = new BeanDefinitionHolder(clientBeanDef, clientClass.getName());
-			BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
+			BeanDefinitionHolder clientBDHolder = new BeanDefinitionHolder(clientBeanDef, clientClass.getName());
+			BeanDefinitionReaderUtils.registerBeanDefinition(clientBDHolder, registry);
 			
 			log.trace("AWS client {} is configured", clientClass.getName());
 		} catch (ClassNotFoundException e) {
@@ -142,14 +138,16 @@ public class AwsClientBeanRegistrar
 		}
 	}
 	
+	
 	@RequiredArgsConstructor
-	static class AwsClientFactoryBean<T> extends AbstractFactoryBean<T> {
+	static class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 		
 		private final Class<?> builderClass;
 		
 		private final Class<T> clientClass;
 		
 		private final AwsClientBuilderConfigurer awsClientBuilderConfigurer;
+		
 		
 		@Override
 		public Class<?> getObjectType() {
@@ -159,9 +157,11 @@ public class AwsClientBeanRegistrar
 		@Override
 		protected T createInstance() throws Exception {
 			Object builder = AwsClientUtil.createBuilder(builderClass);
-			awsClientBuilderConfigurer.configureBuilder(builderClass.getName(), clientClass, builder);
-			Object client = AwsClientUtil.buildClient(builder);
-			return (T) client;
+			boolean enabled = awsClientBuilderConfigurer.configureBuilder(builderClass.getName(), clientClass, builder);
+			if (enabled) {
+				return AwsClientUtil.buildClient(builder);
+			}
+			return null;
 		}
 	}
 }

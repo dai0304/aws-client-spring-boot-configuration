@@ -28,6 +28,9 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
+
 /**
  * Spring configuration class to configure AWS client builders.
  *
@@ -75,7 +78,7 @@ public class AwsClientBuilderConfigurer {
 	
 	private final ConfigurableBeanFactory beanFactory;
 	
-	private final AwsClientPropertiesMap awsClientPropertiesMap;
+	private final Map<String, AwsClientProperties> awsClientPropertiesMap;
 	
 	private final AwsS3ClientProperties awsS3ClientProperties;
 	
@@ -90,7 +93,7 @@ public class AwsClientBuilderConfigurer {
 		return true;
 	}
 	
-	void configureBuilder(String builderClassName, Class<?> clientClass, Object builder) {
+	boolean configureBuilder(String builderClassName, Class<?> clientClass, Object builder) {
 		if (builderClassName.startsWith("com.amazonaws.services.s3.")) {
 			configureAmazonS3ClientBuilder(builderClassName, builder);
 		}
@@ -106,7 +109,7 @@ public class AwsClientBuilderConfigurer {
 			.orElseGet(() -> defaultConfig.map(AwsClientProperties::getEndpoint).orElse(null));
 		if (endpointConfiguration != null) {
 			AwsClientUtil.configureEndpointConfiguration(builder, endpointConfiguration);
-			return;
+			return true;
 		}
 		
 		String region = specificConfig.map(AwsClientProperties::getRegion)
@@ -115,11 +118,8 @@ public class AwsClientBuilderConfigurer {
 			AwsClientUtil.configureRegion(builder, region);
 		}
 		
-		boolean enabled = specificConfig.map(AwsClientProperties::isEnabled)
+		return specificConfig.map(AwsClientProperties::isEnabled)
 			.orElseGet(() -> defaultConfig.map(AwsClientProperties::isEnabled).orElse(true));
-		if (enabled == false) {
-			throw new ClientDisabledException();
-		}
 	}
 	
 	private void configureAmazonS3ClientBuilder(String builderClassName, Object builder) {

@@ -15,14 +15,19 @@
  */
 package jp.xet.spring.aws.autoconfigure;
 
+import java.util.HashMap;
+
+import lombok.Data;
+
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 /**
  * Spring auto-configuration for AWS Clients.
@@ -98,5 +103,64 @@ public class AwsAutoConfiguration {
 	@Bean
 	public static AwsS3ClientProperties awsS3ClientProperties() {
 		return new AwsS3ClientProperties();
+	}
+	
+	
+	@SuppressWarnings("serial")
+	@ConfigurationProperties(value = "aws", ignoreInvalidFields = true)
+	static class AwsClientPropertiesMap extends HashMap<String, AwsClientProperties> {
+	}
+	
+	@Data
+	static class AwsClientProperties {
+		
+		private ClientConfiguration client;
+		
+		private MutableEndpointConfiguration endpoint;
+		
+		private String region;
+		
+		private boolean enabled = true;
+		
+		
+		EndpointConfiguration getEndpoint() {
+			return endpoint == null ? null : endpoint.toEndpointConfiguration();
+		}
+	}
+	
+	/**
+	 * @see <a href="https://github.com/spring-projects/spring-boot/issues/8762">spring-boot#8762</a>
+	 */
+	@Data
+	static class MutableEndpointConfiguration {
+		
+		private String serviceEndpoint;
+		
+		private String signingRegion;
+		
+		
+		EndpointConfiguration toEndpointConfiguration() {
+			if (serviceEndpoint != null) {
+				return new EndpointConfiguration(serviceEndpoint, signingRegion);
+			}
+			return null;
+		}
+	}
+	
+	@Data
+	@ConfigurationProperties(value = "aws.s3", ignoreInvalidFields = true)
+	static class AwsS3ClientProperties {
+		
+		private Boolean pathStyleAccessEnabled;
+		
+		private Boolean chunkedEncodingDisabled;
+		
+		private Boolean accelerateModeEnabled;
+		
+		private Boolean payloadSigningEnabled;
+		
+		private Boolean dualstackEnabled;
+		
+		private Boolean forceGlobalBucketAccessEnabled;
 	}
 }
