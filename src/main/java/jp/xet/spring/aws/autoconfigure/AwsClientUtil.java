@@ -18,12 +18,7 @@ package jp.xet.spring.aws.autoconfigure;
 import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeMethod;
 import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeStaticMethod;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.util.ReflectionUtils;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;

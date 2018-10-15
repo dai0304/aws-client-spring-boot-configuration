@@ -60,19 +60,23 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 public class AwsAutoConfigurationTest {
 	
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-		.withConfiguration(AutoConfigurations.of(AwsAutoConfiguration.class));
+		.withConfiguration(AutoConfigurations.of(AwsClientConfiguration.class));
 	
 	
 	@Configuration
-	@EnableAwsClient({AmazonS3.class, AmazonSQS.class, AmazonSNS.class})
+	@EnableAwsClient({
+		AmazonS3.class,
+		AmazonSQS.class,
+		AmazonSNS.class
+	})
 	@EnableConfigurationProperties
-	static class Configuration1 {
+	static class ConfigurationSyncClient {
 	}
 	
 	
 	@Test
 	public void defaultClient_SyncOnly() {
-		this.contextRunner.withUserConfiguration(Configuration1.class).run(context -> {
+		this.contextRunner.withUserConfiguration(ConfigurationSyncClient.class).run(context -> {
 			assertThat(context).hasSingleBean(AmazonS3.class);
 			assertThat(context).hasSingleBean(AmazonSQS.class);
 			assertThat(context).doesNotHaveBean(AmazonSQSAsync.class);
@@ -99,42 +103,48 @@ public class AwsAutoConfigurationTest {
 		});
 	}
 	
+	
 	@Configuration
-	@EnableAwsClient({AmazonSNS.class, AmazonSNSAsync.class})
+	@EnableAwsClient({
+		AmazonSNS.class,
+		AmazonSNSAsync.class
+	})
 	@EnableConfigurationProperties
-	static class Configuration2 {
+	static class ConfigurationSyncAndAsync {
 	}
 	
 	
 	@Test
 	public void defaultClient_BothSyncAndAsync() {
-		this.contextRunner.withUserConfiguration(Configuration2.class)
-			.withPropertyValues("aws.async-enabled=true")
-			.run(context -> {
-				assertThat(context).hasBean(AmazonSNS.class.getName());
-				assertThat(context).hasBean(AmazonSNSAsync.class.getName());
-			});
+		this.contextRunner.withUserConfiguration(ConfigurationSyncAndAsync.class).run(context -> {
+			assertThat(context).hasBean(AmazonSNS.class.getName());
+			assertThat(context).hasBean(AmazonSNSAsync.class.getName());
+		});
 	}
+	
 	
 	@Configuration
 	@EnableAwsClient(AmazonSNSAsync.class)
 	@EnableConfigurationProperties
-	static class Configuration3 {
+	static class ConfigurationAsyncOnly {
 	}
+	
 	
 	@Test
 	public void defaultClient_AsyncOnly() {
-		this.contextRunner.withUserConfiguration(Configuration3.class)
-			.withPropertyValues("aws.sync-enabled=false")
-			.withPropertyValues("aws.async-enabled=true")
-			.run(context -> {
-				assertThat(context).doesNotHaveBean(AmazonSNS.class.getName());
-				assertThat(context).hasBean(AmazonSNSAsync.class.getName());
-			});
+		this.contextRunner.withUserConfiguration(ConfigurationAsyncOnly.class).run(context -> {
+			assertThat(context).doesNotHaveBean(AmazonSNS.class.getName());
+			assertThat(context).hasBean(AmazonSNSAsync.class.getName());
+		});
 	}
 	
+	
 	@Configuration
-	@EnableAwsClient({AmazonS3.class, AmazonSQS.class, AmazonDynamoDB.class})
+	@EnableAwsClient({
+		AmazonS3.class,
+		AmazonSQS.class,
+		AmazonDynamoDB.class
+	})
 	@EnableConfigurationProperties
 	static class Configuration4 {
 	}
@@ -167,11 +177,18 @@ public class AwsAutoConfigurationTest {
 			});
 	}
 	
+	
 	@Configuration
-	@EnableAwsClient({AmazonSQS.class, AmazonSQSAsync.class, AmazonSNS.class, AmazonSNSAsync.class})
+	@EnableAwsClient({
+		AmazonSQS.class,
+		AmazonSQSAsync.class,
+		AmazonSNS.class,
+		AmazonSNSAsync.class
+	})
 	@EnableConfigurationProperties
 	static class Configuration5 {
 	}
+	
 	
 	@Test
 	public void asyncConfigurationOverride() {
@@ -182,7 +199,6 @@ public class AwsAutoConfigurationTest {
 		int snsAsyncSocketTimeout = 4;
 		String snsAsyncEndpoint = "http://localhost:60004";
 		this.contextRunner.withUserConfiguration(Configuration5.class)
-			.withPropertyValues("aws.async-enabled=true")
 			.withPropertyValues("aws.sqs.client.socket-timeout=" + sqsSocketTimeout)
 			.withPropertyValues("aws.sqs.endpoint.service-endpoint=" + sqsEndpoint)
 			.withPropertyValues("aws.sns.client.socket-timeout=" + snsSocketTimeout)
@@ -190,33 +206,34 @@ public class AwsAutoConfigurationTest {
 			.withPropertyValues("aws.sns-async.client.socket-timeout=" + snsAsyncSocketTimeout)
 			.withPropertyValues("aws.sns-async.endpoint.service-endpoint=" + snsAsyncEndpoint)
 			.run(context -> {
-				assertThat(context.getBean(AmazonSQS.class.getName())).isInstanceOfSatisfying(AmazonSQSClient.class,
-						client -> {
-							// use aws.sqs.*
-							assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(sqsEndpoint));
-							assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(sqsSocketTimeout);
-						});
+				assertThat(context.getBean(AmazonSQS.class.getName()))
+					.isInstanceOfSatisfying(AmazonSQSClient.class, client -> {
+						// use aws.sqs.*
+						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(sqsEndpoint));
+						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(sqsSocketTimeout);
+					});
 				assertThat(context.getBean(AmazonSQSAsync.class.getName()))
 					.isInstanceOfSatisfying(AmazonSQSAsyncClient.class, client -> {
 						// use aws.sqs.*
 						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(sqsEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(sqsSocketTimeout);
 					});
-				assertThat(context.getBean(AmazonSNS.class.getName())).isInstanceOfSatisfying(AmazonSNSClient.class,
-						client -> {
-							// use aws.sns.*
-							assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsEndpoint));
-							assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(snsSocketTimeout);
-						});
-				assertThat(context.getBean(AmazonSNSAsync.class)).isInstanceOfSatisfying(AmazonSNSAsyncClient.class,
-						client -> {
-							// use aws.sns-async.*
-							assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsAsyncEndpoint));
-							assertThat(client.getClientConfiguration().getSocketTimeout())
-								.isEqualTo(snsAsyncSocketTimeout);
-						});
+				assertThat(context.getBean(AmazonSNS.class.getName()))
+					.isInstanceOfSatisfying(AmazonSNSClient.class, client -> {
+						// use aws.sns.*
+						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsEndpoint));
+						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(snsSocketTimeout);
+					});
+				assertThat(context.getBean(AmazonSNSAsync.class))
+					.isInstanceOfSatisfying(AmazonSNSAsyncClient.class, client -> {
+						// use aws.sns-async.*
+						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsAsyncEndpoint));
+						assertThat(client.getClientConfiguration().getSocketTimeout())
+							.isEqualTo(snsAsyncSocketTimeout);
+					});
 			});
 	}
+	
 	
 	@Configuration
 	@EnableAwsClient(AmazonS3.class)
@@ -228,18 +245,18 @@ public class AwsAutoConfigurationTest {
 	@Test
 	public void s3Configurations_default() {
 		this.contextRunner.withUserConfiguration(ConfigurationS3.class).run(context -> {
-			assertThat(context.getBean(AmazonS3.class.getName())).isInstanceOfSatisfying(AmazonS3Client.class,
-					client -> {
-						S3ClientOptions clientOptions =
-								(S3ClientOptions) ReflectionTestUtils.getField(client, "clientOptions");
-						assertThat(clientOptions)
-							.returns(false, S3ClientOptions::isPathStyleAccess)
-							.returns(false, S3ClientOptions::isChunkedEncodingDisabled)
-							.returns(false, S3ClientOptions::isAccelerateModeEnabled)
-							.returns(false, S3ClientOptions::isPathStyleAccess)
-							.returns(false, S3ClientOptions::isDualstackEnabled)
-							.returns(false, S3ClientOptions::isForceGlobalBucketAccessEnabled);
-					});
+			assertThat(context.getBean(AmazonS3.class.getName()))
+				.isInstanceOfSatisfying(AmazonS3Client.class, client -> {
+					S3ClientOptions clientOptions =
+							(S3ClientOptions) ReflectionTestUtils.getField(client, "clientOptions");
+					assertThat(clientOptions)
+						.returns(false, S3ClientOptions::isPathStyleAccess)
+						.returns(false, S3ClientOptions::isChunkedEncodingDisabled)
+						.returns(false, S3ClientOptions::isAccelerateModeEnabled)
+						.returns(false, S3ClientOptions::isPathStyleAccess)
+						.returns(false, S3ClientOptions::isDualstackEnabled)
+						.returns(false, S3ClientOptions::isForceGlobalBucketAccessEnabled);
+				});
 		});
 	}
 	
@@ -253,31 +270,33 @@ public class AwsAutoConfigurationTest {
 			.withPropertyValues("aws.s3.dualstack-enabled=true")
 			.withPropertyValues("aws.s3.force-global-bucket-access-enabled=true")
 			.run(context -> {
-				assertThat(context.getBean(AmazonS3.class.getName())).isInstanceOfSatisfying(AmazonS3Client.class,
-						client -> {
-							S3ClientOptions clientOptions =
-									(S3ClientOptions) ReflectionTestUtils.getField(client, "clientOptions");
-							assertThat(clientOptions)
-								.returns(true, S3ClientOptions::isPathStyleAccess)
-								.returns(true, S3ClientOptions::isChunkedEncodingDisabled)
-								.returns(false, S3ClientOptions::isAccelerateModeEnabled)
-								.returns(true, S3ClientOptions::isPathStyleAccess)
-								.returns(true, S3ClientOptions::isDualstackEnabled)
-								.returns(true, S3ClientOptions::isForceGlobalBucketAccessEnabled);
-						});
+				assertThat(context.getBean(AmazonS3.class.getName()))
+					.isInstanceOfSatisfying(AmazonS3Client.class, client -> {
+						S3ClientOptions clientOptions =
+								(S3ClientOptions) ReflectionTestUtils.getField(client, "clientOptions");
+						assertThat(clientOptions)
+							.returns(true, S3ClientOptions::isPathStyleAccess)
+							.returns(true, S3ClientOptions::isChunkedEncodingDisabled)
+							.returns(false, S3ClientOptions::isAccelerateModeEnabled)
+							.returns(true, S3ClientOptions::isPathStyleAccess)
+							.returns(true, S3ClientOptions::isDualstackEnabled)
+							.returns(true, S3ClientOptions::isForceGlobalBucketAccessEnabled);
+					});
 			});
 	}
 	
+	
 	@Configuration
 	@EnableAwsClient({
-			AmazonDynamoDB.class,
-			AmazonDynamoDBStreams.class,
-			com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing.class,
-			com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancing.class
+		AmazonDynamoDB.class,
+		AmazonDynamoDBStreams.class,
+		com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing.class,
+		com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancing.class
 	})
 	@EnableConfigurationProperties
 	static class Configuration6 {
 	}
+	
 	
 	@Test
 	public void clientConfigurations() {
@@ -353,7 +372,10 @@ public class AwsAutoConfigurationTest {
 	
 	
 	@Configuration
-	@EnableAwsClient({AmazonS3.class, AmazonS3Encryption.class})
+	@EnableAwsClient({
+		AmazonS3.class,
+		AmazonS3Encryption.class
+	})
 	@EnableConfigurationProperties
 	static class S3EncryptionConfiguration {
 		

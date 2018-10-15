@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package jp.xet.spring.aws.autoconfigure;
 
 import java.lang.reflect.UndeclaredThrowableException;
@@ -16,24 +31,30 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 
 @Slf4j
-public class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
+class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
+	
+	private static final String ENCRYPTION_CLIENT = "com.amazonaws.services.s3.AmazonS3Encryption";
+	
+	
+	private static boolean isConfigurable(BeanDefinitionRegistry registry, Class<?> clientClass) {
+		if (clientClass.getName().equals(ENCRYPTION_CLIENT)
+				&& registry.containsBeanDefinition(AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER) == false) {
+			log.debug("Skip {} -- " + AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER + " is not configured",
+					clientClass);
+			return false;
+		}
+		return true;
+	}
 	
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 		log.trace("registerBeanDefinitions: {}", registry);
 		
-//		boolean syncEnabled = Boolean.valueOf(environment.getProperty("aws.sync-enabled", "true"));
-//		boolean asyncEnabled = Boolean.valueOf(environment.getProperty("aws.async-enabled", "false"));
-//		
-//		if (syncEnabled == false) {
-//			log.debug("AWS sync client is disabled.");
-//		}
-//		if (asyncEnabled == false) {
-//			log.debug("AWS async client is disabled.");
-//		}
-		
 		AnnotationAttributes attributes = AnnotationAttributes.fromMap(
 				importingClassMetadata.getAnnotationAttributes(EnableAwsClient.class.getName(), false));
+		if (attributes == null) {
+			return;
+		}
 		Class<?>[] clientClasses = attributes.getClassArray("value");
 		
 		Arrays.stream(clientClasses)
@@ -43,7 +64,7 @@ public class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar
 	private void registerAwsClient(BeanDefinitionRegistry registry, Class<?> clientClass) {
 		try {
 			log.trace("Attempt to configure AWS client: {}", clientClass);
-			if (AwsClientFactoryBean.isConfigurable(registry, clientClass) == false) {
+			if (isConfigurable(registry, clientClass) == false) {
 				return;
 			}
 			
