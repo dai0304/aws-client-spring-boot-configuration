@@ -22,7 +22,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
@@ -43,7 +42,6 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
  *         This will be used to determine both the service endpoint (eg: https://sns.us-west-1.amazonaws.com)
  *         and signing region (eg: us-west-1) for requests.
  *         This value is used only if any endpoint configuration is not set. (string)</li>
- *     <li>{@code aws.<service-package-name>[-async].enabled} - (boolean)</li>
  * </ul>
  * 
  * <h3>Default client configurations.</h3>
@@ -81,12 +79,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
  * @since #version#
  */
 @Configuration
-public class AwsAutoConfiguration {
-	
-	@Bean
-	public static AwsClientBeanRegistrar awsClientRegisterer(Environment environment) {
-		return new AwsClientBeanRegistrar(environment);
-	}
+class AwsClientConfiguration {
 	
 	@Bean
 	public static AwsClientPropertiesMap awsClientPropertiesMap() {
@@ -112,8 +105,6 @@ public class AwsAutoConfiguration {
 		private MutableEndpointConfiguration endpoint;
 		
 		private String region;
-		
-		private boolean enabled = true;
 		
 		
 		EndpointConfiguration getEndpoint() {

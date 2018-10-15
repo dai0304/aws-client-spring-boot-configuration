@@ -25,32 +25,30 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsClientProperties;
-import jp.xet.spring.aws.autoconfigure.AwsAutoConfiguration.AwsS3ClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsClientConfiguration.AwsClientProperties;
+import jp.xet.spring.aws.autoconfigure.AwsClientConfiguration.AwsS3ClientProperties;
 
 /**
  * Spring configuration class to configure AWS client builders.
  *
  * @param <T> type of AWS client
  * @author miyamoto.daisuke
- * @since #version#
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
+class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	private static final String DEFAULT_NAME = "default";
 	
 	private static final String S3_BUILDER = "com.amazonaws.services.s3.AmazonS3Builder";
 	
-	private static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
+	static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
 	
-	private static final String ENCRYPTION_MATERIALS_PROVIDER =
+	static final String ENCRYPTION_MATERIALS_PROVIDER =
 			"com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
 	
 	
@@ -93,16 +91,6 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 		return clientClass;
 	}
 	
-	static boolean isConfigurable(BeanDefinitionRegistry registry, String builderClassName) {
-		if (builderClassName.equals(ENCRYPTION_CLIENT_BUILDER)
-				&& registry.containsBeanDefinition(ENCRYPTION_MATERIALS_PROVIDER) == false) {
-			log.debug("Skip " + ENCRYPTION_CLIENT_BUILDER + " -- " + ENCRYPTION_MATERIALS_PROVIDER
-					+ " is not configured");
-			return false;
-		}
-		return true;
-	}
-	
 	@Override
 	protected T createInstance() throws Exception {
 		Object builder = AwsClientUtil.createBuilder(builderClass);
@@ -130,13 +118,7 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 			}
 		}
 		
-		Boolean enabled = specificConfig.map(AwsClientProperties::isEnabled)
-			.orElseGet(() -> defaultConfig.map(AwsClientProperties::isEnabled).orElse(true));
-		if (enabled) {
-			return AwsClientUtil.buildClient(builder);
-		} else {
-			throw new RuntimeException("disabled"); // TODO NOPMD
-		}
+		return AwsClientUtil.buildClient(builder);
 	}
 	
 	private void configureAmazonS3ClientBuilder(Object builder) {

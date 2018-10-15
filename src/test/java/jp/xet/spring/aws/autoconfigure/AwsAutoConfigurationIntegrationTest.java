@@ -24,7 +24,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -32,7 +31,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.Region;
 
 /**
- * Integration test for {@link AwsAutoConfiguration}.
+ * Integration test for {@link AwsClientConfiguration}.
  *
  * @author miyamoto.daisuke
  * @since #version#
@@ -42,13 +41,13 @@ import com.amazonaws.services.ec2.model.Region;
 public class AwsAutoConfigurationIntegrationTest {
 	
 	@Test
-	@Ignore
 	public void contextLoads() {
 		// do nothing
 	}
 	
 	
 	@SpringBootApplication
+	@EnableAwsClient(AmazonEC2.class)
 	@Slf4j
 	@RequiredArgsConstructor
 	static class TestApplication implements CommandLineRunner {
