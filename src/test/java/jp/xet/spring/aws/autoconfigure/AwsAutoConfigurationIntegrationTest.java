@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,6 +42,7 @@ import com.amazonaws.services.ec2.model.Region;
 public class AwsAutoConfigurationIntegrationTest {
 	
 	@Test
+	@Ignore
 	public void contextLoads() {
 		// do nothing
 	}
