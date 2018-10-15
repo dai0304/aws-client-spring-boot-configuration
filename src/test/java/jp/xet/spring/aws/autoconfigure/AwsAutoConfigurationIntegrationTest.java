@@ -42,13 +42,13 @@ import com.amazonaws.services.ec2.model.Region;
 public class AwsAutoConfigurationIntegrationTest {
 	
 	@Test
-	@Ignore
 	public void contextLoads() {
 		// do nothing
 	}
 	
 	
 	@SpringBootApplication
+	@EnableAwsClient(AmazonEC2.class)
 	@Slf4j
 	@RequiredArgsConstructor
 	static class TestApplication implements CommandLineRunner {

@@ -83,7 +83,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 @Configuration
 public class AwsAutoConfiguration {
 	
-	@Bean
+//	@Bean
 	public static AwsClientBeanRegistrar awsClientRegisterer(Environment environment) {
 		return new AwsClientBeanRegistrar(environment);
 	}

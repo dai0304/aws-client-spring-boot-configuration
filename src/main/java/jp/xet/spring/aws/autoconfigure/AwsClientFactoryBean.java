@@ -48,7 +48,7 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	private static final String S3_BUILDER = "com.amazonaws.services.s3.AmazonS3Builder";
 	
-	private static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
+	private static final String ENCRYPTION_CLIENT = "com.amazonaws.services.s3.AmazonS3Encryption";
 	
 	private static final String ENCRYPTION_MATERIALS_PROVIDER =
 			"com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
@@ -93,11 +93,10 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 		return clientClass;
 	}
 	
-	static boolean isConfigurable(BeanDefinitionRegistry registry, String builderClassName) {
-		if (builderClassName.equals(ENCRYPTION_CLIENT_BUILDER)
+	static boolean isConfigurable(BeanDefinitionRegistry registry, Class<?> clientClass) {
+		if (clientClass.getName().equals(ENCRYPTION_CLIENT)
 				&& registry.containsBeanDefinition(ENCRYPTION_MATERIALS_PROVIDER) == false) {
-			log.debug("Skip " + ENCRYPTION_CLIENT_BUILDER + " -- " + ENCRYPTION_MATERIALS_PROVIDER
-					+ " is not configured");
+			log.debug("Skip {} -- " + ENCRYPTION_MATERIALS_PROVIDER+ " is not configured", clientClass);
 			return false;
 		}
 		return true;
@@ -154,7 +153,7 @@ public class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 			log.warn(S3_BUILDER + " is not found in classpath -- ignored", e);
 		}
 		
-		if (builderClass.getName().equals(ENCRYPTION_CLIENT_BUILDER)) {
+		if (builderClass.getName().equals(ENCRYPTION_CLIENT + "ClientBuilder")) {
 			BeanFactory beanFactory = getBeanFactory();
 			if (beanFactory != null && beanFactory.containsBean(ENCRYPTION_MATERIALS_PROVIDER)) {
 				try {

@@ -29,7 +29,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.amazonaws.services.alexaforbusiness.AmazonAlexaForBusiness;
@@ -65,14 +64,15 @@ public class AwsAutoConfigurationTest {
 	
 	
 	@Configuration
+	@EnableAwsClient({AmazonS3.class, AmazonSQS.class, AmazonSNS.class})
 	@EnableConfigurationProperties
-	static class EmptyConfiguration {
+	static class Configuration1 {
 	}
 	
 	
 	@Test
 	public void defaultClient_SyncOnly() {
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class).run(context -> {
+		this.contextRunner.withUserConfiguration(Configuration1.class).run(context -> {
 			assertThat(context).hasSingleBean(AmazonS3.class);
 			assertThat(context).hasSingleBean(AmazonSQS.class);
 			assertThat(context).doesNotHaveBean(AmazonSQSAsync.class);
@@ -99,9 +99,16 @@ public class AwsAutoConfigurationTest {
 		});
 	}
 	
+	@Configuration
+	@EnableAwsClient({AmazonSNS.class, AmazonSNSAsync.class})
+	@EnableConfigurationProperties
+	static class Configuration2 {
+	}
+	
+	
 	@Test
 	public void defaultClient_BothSyncAndAsync() {
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class)
+		this.contextRunner.withUserConfiguration(Configuration2.class)
 			.withPropertyValues("aws.async-enabled=true")
 			.run(context -> {
 				assertThat(context).hasBean(AmazonSNS.class.getName());
@@ -109,9 +116,15 @@ public class AwsAutoConfigurationTest {
 			});
 	}
 	
+	@Configuration
+	@EnableAwsClient(AmazonSNSAsync.class)
+	@EnableConfigurationProperties
+	static class Configuration3 {
+	}
+	
 	@Test
 	public void defaultClient_AsyncOnly() {
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class)
+		this.contextRunner.withUserConfiguration(Configuration3.class)
 			.withPropertyValues("aws.sync-enabled=false")
 			.withPropertyValues("aws.async-enabled=true")
 			.run(context -> {
@@ -120,25 +133,16 @@ public class AwsAutoConfigurationTest {
 			});
 	}
 	
-	@Test
-	@Ignore
-	public void defaultClient_Disable() {
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class)
-			.withPropertyValues("aws.s3.enabled=false")
-			.withPropertyValues("aws.sqs-async.enabled=false")
-			.withPropertyValues("aws.sns.enabled=false")
-			.run(context -> {
-				assertThat(context).doesNotHaveBean(AmazonS3.class.getName());
-				assertThat(context).hasBean(AmazonSQS.class.getName());
-				assertThat(context).doesNotHaveBean(AmazonSQSAsync.class.getName());
-				assertThat(context).doesNotHaveBean(AmazonSNS.class.getName());
-				assertThat(context).doesNotHaveBean(AmazonSNSAsync.class.getName());
-			});
+	@Configuration
+	@EnableAwsClient({AmazonS3.class, AmazonSQS.class, AmazonDynamoDB.class})
+	@EnableConfigurationProperties
+	static class Configuration4 {
 	}
+	
 	
 	@Test
 	public void defaultConfigurationAndOverride() {
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class)
+		this.contextRunner.withUserConfiguration(Configuration4.class)
 			.withPropertyValues("aws.default.client.socket-timeout=123")
 			.withPropertyValues("aws.default.region=us-east-1")
 			.withPropertyValues("aws.sqs.region=eu-central-1")
@@ -163,6 +167,12 @@ public class AwsAutoConfigurationTest {
 			});
 	}
 	
+	@Configuration
+	@EnableAwsClient({AmazonSQS.class, AmazonSQSAsync.class, AmazonSNS.class, AmazonSNSAsync.class})
+	@EnableConfigurationProperties
+	static class Configuration5 {
+	}
+	
 	@Test
 	public void asyncConfigurationOverride() {
 		int sqsSocketTimeout = 2;
@@ -171,7 +181,7 @@ public class AwsAutoConfigurationTest {
 		String snsEndpoint = "http://localhost:60003";
 		int snsAsyncSocketTimeout = 4;
 		String snsAsyncEndpoint = "http://localhost:60004";
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class)
+		this.contextRunner.withUserConfiguration(Configuration5.class)
 			.withPropertyValues("aws.async-enabled=true")
 			.withPropertyValues("aws.sqs.client.socket-timeout=" + sqsSocketTimeout)
 			.withPropertyValues("aws.sqs.endpoint.service-endpoint=" + sqsEndpoint)
@@ -208,9 +218,16 @@ public class AwsAutoConfigurationTest {
 			});
 	}
 	
+	@Configuration
+	@EnableAwsClient(AmazonS3.class)
+	@EnableConfigurationProperties
+	static class ConfigurationS3 {
+	}
+	
+	
 	@Test
 	public void s3Configurations_default() {
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class).run(context -> {
+		this.contextRunner.withUserConfiguration(ConfigurationS3.class).run(context -> {
 			assertThat(context.getBean(AmazonS3.class.getName())).isInstanceOfSatisfying(AmazonS3Client.class,
 					client -> {
 						S3ClientOptions clientOptions =
@@ -228,7 +245,7 @@ public class AwsAutoConfigurationTest {
 	
 	@Test
 	public void s3Configurations() {
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class)
+		this.contextRunner.withUserConfiguration(ConfigurationS3.class)
 			.withPropertyValues("aws.s3.path-style-access-enabled=true")
 			.withPropertyValues("aws.s3.chunked-encoding-disabled=true")
 			.withPropertyValues("aws.s3.accelerate-mode-enabled=false")
@@ -251,6 +268,17 @@ public class AwsAutoConfigurationTest {
 			});
 	}
 	
+	@Configuration
+	@EnableAwsClient({
+			AmazonDynamoDB.class,
+			AmazonDynamoDBStreams.class,
+			com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing.class,
+			com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancing.class
+	})
+	@EnableConfigurationProperties
+	static class Configuration6 {
+	}
+	
 	@Test
 	public void clientConfigurations() {
 		int dynamoDbSocketTimeout = 5;
@@ -259,7 +287,7 @@ public class AwsAutoConfigurationTest {
 		String elbv1Endpoint = "http://localhost:60006";
 		int elbv2SocketTimeout = 7;
 		String elbv2Endpoint = "http://localhost:60007";
-		this.contextRunner.withUserConfiguration(EmptyConfiguration.class)
+		this.contextRunner.withUserConfiguration(Configuration6.class)
 			.withPropertyValues("aws.dynamodbv2.client.socket-timeout=" + dynamoDbSocketTimeout)
 			.withPropertyValues("aws.dynamodbv2.endpoint.service-endpoint=" + dynamoDbEndpoint)
 			.withPropertyValues("aws.elasticloadbalancing.client.socket-timeout=" + elbv1SocketTimeout)
@@ -303,6 +331,7 @@ public class AwsAutoConfigurationTest {
 	
 	
 	@Configuration
+	@EnableAwsClient(AmazonS3.class)
 	@EnableConfigurationProperties
 	static class UserConfiguration {
 		
@@ -324,6 +353,7 @@ public class AwsAutoConfigurationTest {
 	
 	
 	@Configuration
+	@EnableAwsClient({AmazonS3.class, AmazonS3Encryption.class})
 	@EnableConfigurationProperties
 	static class S3EncryptionConfiguration {
 		

@@ -74,32 +74,32 @@ public class AwsClientBeanRegistrar implements BeanDefinitionRegistryPostProcess
 	}
 	
 	private void registerAwsClient(BeanDefinitionRegistry registry, String builderClassName) {
-		try {
-			log.trace("Attempt to configure AWS client: {}", builderClassName);
-			if (AwsClientFactoryBean.isConfigurable(registry, builderClassName) == false) {
-				return;
-			}
-			
-			Class<?> builderClass = Class.forName(builderClassName);
-			Class<?> clientClass = AwsClientUtil.getClientClass(builderClass);
-			
-			if (registry.containsBeanDefinition(clientClass.getName())) {
-				log.debug("Skip {} -- already configured", clientClass.getName());
-				return;
-			}
-			
-			RootBeanDefinition clientBeanDef = createAwsClientBeanDefinition(builderClass, clientClass);
-			BeanDefinitionHolder clientBDHolder = new BeanDefinitionHolder(clientBeanDef, clientClass.getName());
-			BeanDefinitionReaderUtils.registerBeanDefinition(clientBDHolder, registry);
-			
-			log.trace("AWS client {} is configured", clientClass.getName());
-		} catch (ClassNotFoundException e) {
-			log.trace("Skip.  Builder class is not found in classpath: {}", builderClassName);
-			// ignore
-		} catch (ClientClassNotDeterminedException | IllegalStateException | UndeclaredThrowableException e) {
-			log.error("Illegal builder: {}", builderClassName, e);
-			throw e;
-		}
+//		try {
+//			log.trace("Attempt to configure AWS client: {}", builderClassName);
+//			if (AwsClientFactoryBean.isConfigurable(registry, builderClassName) == false) {
+//				return;
+//			}
+//			
+//			Class<?> builderClass = Class.forName(builderClassName);
+//			Class<?> clientClass = AwsClientUtil.getClientClass(builderClass);
+//			
+//			if (registry.containsBeanDefinition(clientClass.getName())) {
+//				log.debug("Skip {} -- already configured", clientClass.getName());
+//				return;
+//			}
+//			
+//			RootBeanDefinition clientBeanDef = createAwsClientBeanDefinition(builderClass, clientClass);
+//			BeanDefinitionHolder clientBDHolder = new BeanDefinitionHolder(clientBeanDef, clientClass.getName());
+//			BeanDefinitionReaderUtils.registerBeanDefinition(clientBDHolder, registry);
+//			
+//			log.trace("AWS client {} is configured", clientClass.getName());
+//		} catch (ClassNotFoundException e) {
+//			log.trace("Skip.  Builder class is not found in classpath: {}", builderClassName);
+//			// ignore
+//		} catch (ClientClassNotDeterminedException | IllegalStateException | UndeclaredThrowableException e) {
+//			log.error("Illegal builder: {}", builderClassName, e);
+//			throw e;
+//		}
 	}
 	
 	private RootBeanDefinition createAwsClientBeanDefinition(Class<?> builderClass, Class<?> clientClass) {
