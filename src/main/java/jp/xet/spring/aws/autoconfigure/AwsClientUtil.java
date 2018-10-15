@@ -107,7 +107,7 @@ class AwsClientUtil {
 	 * @param builder AWS client builder
 	 * @return AWS client
 	 */
-	static Object buildClient(Object builder) {
+	static <T> T buildClient(Object builder) {
 		return invokeMethod(builder, "build");
 	}
 }

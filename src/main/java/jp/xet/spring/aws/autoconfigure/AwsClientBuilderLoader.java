@@ -25,6 +25,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +42,7 @@ class AwsClientBuilderLoader {
 	 * 
 	 * <p>Can be present in multiple JAR files.</p>
 	 */
-	public static final String DEFAULT_LOCATION = "META-INF/aws.builders";
+	static final String DEFAULT_LOCATION = "META-INF/aws.builders";
 	
 	@Setter
 	private static String location = DEFAULT_LOCATION;
@@ -53,8 +54,11 @@ class AwsClientBuilderLoader {
 	 *
 	 * @throws UncheckedIOException if an error occurs while loading builder names
 	 */
-	public static Set<String> loadBuilderNames() {
-		return loadBuilderNames(null);
+	static Set<String> loadBuilderNames(boolean syncEnabled, boolean asyncEnabled) {
+		return loadBuilderNames(null).stream()
+			.filter(n -> asyncEnabled || n.endsWith("AsyncClientBuilder") == false)
+			.filter(n -> syncEnabled || n.endsWith("AsyncClientBuilder"))
+			.collect(Collectors.toSet());
 	}
 	
 	/**
@@ -64,7 +68,7 @@ class AwsClientBuilderLoader {
 	 * @param classLoader the ClassLoader to use for loading resources; can be {@code null} to use the default
 	 * @throws UncheckedIOException if an error occurs while loading builder names
 	 */
-	private static Set<String> loadBuilderNames(ClassLoader classLoader) {
+	static Set<String> loadBuilderNames(ClassLoader classLoader) {
 		Set<String> result = CACHE.get(classLoader);
 		if (result != null) {
 			return result;
