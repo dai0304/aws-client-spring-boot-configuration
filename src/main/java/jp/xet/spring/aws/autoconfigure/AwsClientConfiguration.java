@@ -27,13 +27,11 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 /**
- * Spring auto-configuration for AWS Clients.
- * 
- * <p>See {@code META-INF/aws.builders}</p>
+ * Spring configuration for AWS Clients.
  * 
  * <ul>
  *     <li>{@code aws.<service-package-name>[-async].client.<property>} - the {@link ClientConfiguration} to be used
- *         by the client. (ClientConfiguration)</li>
+ *         by the client.</li>
  *     <li>{@code aws.<service-package-name>[-async].endpoint.service-endpoint} - The service endpoint either with
  *         or without the protocol (e.g. https://sns.us-west-1.amazonaws.com or sns.us-west-1.amazonaws.com) (string)</li>
  *     <li>{@code aws.<service-package-name>[-async].endpoint.signing-region} - the region to use
@@ -47,8 +45,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
  * <h3>Default client configurations.</h3>
  * 
  * <ul>
- *     <li>{@code aws.default[-async].client.<property>} - the {@link ClientConfiguration} to be used
- *         by the client. (ClientConfiguration)</li>
+ *     <li>{@code aws.default[-async].client.<property>} - the {@link ClientConfiguration} to be used by the client.</li>
  *     <li>{@code aws.default[-async].endpoint.service-endpoint} - The service endpoint either with
  *         or without the protocol (e.g. https://sns.us-west-1.amazonaws.com or sns.us-west-1.amazonaws.com) (string)</li>
  *     <li>{@code aws.default[-async].endpoint.signing-region} - the region to use

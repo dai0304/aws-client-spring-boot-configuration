@@ -46,7 +46,7 @@ class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	private static final String S3_BUILDER = "com.amazonaws.services.s3.AmazonS3Builder";
 	
-	static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
+	private static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
 	
 	static final String ENCRYPTION_MATERIALS_PROVIDER =
 			"com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
@@ -133,7 +133,7 @@ class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 						awsS3ClientProperties.getForceGlobalBucketAccessEnabled());
 			}
 		} catch (ClassNotFoundException e) {
-			log.warn(S3_BUILDER + " is not found in classpath -- ignored", e);
+			log.debug(S3_BUILDER + " is not found in classpath -- ignored", e);
 		}
 		
 		if (builderClass.getName().equals(ENCRYPTION_CLIENT_BUILDER)) {

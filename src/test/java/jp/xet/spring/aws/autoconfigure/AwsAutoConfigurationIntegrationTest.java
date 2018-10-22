@@ -46,10 +46,10 @@ public class AwsAutoConfigurationIntegrationTest {
 	}
 	
 	
-	@SpringBootApplication
-	@EnableAwsClient(AmazonEC2.class)
 	@Slf4j
 	@RequiredArgsConstructor
+	@SpringBootApplication
+	@EnableAwsClient(AmazonEC2.class)
 	static class TestApplication implements CommandLineRunner {
 		
 		/**
