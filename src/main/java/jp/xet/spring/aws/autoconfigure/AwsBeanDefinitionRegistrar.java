@@ -43,6 +43,7 @@ class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 		AnnotationAttributes attributes = AnnotationAttributes.fromMap(
 				importingClassMetadata.getAnnotationAttributes(EnableAwsClient.class.getName(), false));
 		if (attributes == null) {
+			log.warn("Attributes of EnableAwsClient is null.");
 			return;
 		}
 		Class<?>[] clientClasses = attributes.getClassArray("value");
