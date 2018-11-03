@@ -1,4 +1,4 @@
-# aws-client-spring-boot-autoconfigure
+# spring-boot-aws-client-configuration
 
 Many AWS client classes are defined, and each client instance has its own configurations.
 
@@ -45,7 +45,7 @@ class AwsClientConfiguration {
 }
 ```
 
-aws-client-spring-boot-autoconfigure standardizes and makes easy these configuration.
+spring-boot-aws-client-configuration standardizes and makes easy these configuration.
 
 ```java
 @Configuration
@@ -59,6 +59,11 @@ class AwsClientConfiguration {
 }
 ```
 
+```properties
+aws.sqs.client.connection-timeout=2500
+aws.sqs.client.socket-timeout=25000
+```
+
 
 ## Environment Prerequisites
 
@@ -68,7 +73,7 @@ class AwsClientConfiguration {
 
 ## Auto client registration
 
-aws-client-spring-boot-autoconfigure registers AWS clients specified by `@EnableAwsClient` annotation.
+spring-boot-aws-client-configuration registers AWS clients specified by `@EnableAwsClient` annotation.
 
 The bean name to be registered is the FQCN of the AWS client interface.
 
@@ -171,7 +176,7 @@ The client builder for `AmazonS3Encryption` is
 `com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder`.
 
 This client builder requires `EncryptionMaterialsProvider`.
-aws-client-spring-boot-autoconfigure builds `AmazonS3Encryption`
+spring-boot-aws-client-configuration builds `AmazonS3Encryption`
 using a bean named `com.amazonaws.services.s3.model.EncryptionMaterialsProvider`
 as `EncryptionMaterialsProvider`. 
 
@@ -205,7 +210,7 @@ Although it supports client registration, it can not configure the client.
 
 ## Contribution
 
-1. Fork ([https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork](https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork))
+1. Fork ([https://github.com/dai0304/spring-boot-aws-client-configuration/fork](https://github.com/dai0304/spring-boot-aws-client-configuration/fork))
 2. Create a feature branch named like `feature/something_awesome_feature` from `development` branch
 3. Commit your changes
 4. Rebase your local changes against the `develop` branch

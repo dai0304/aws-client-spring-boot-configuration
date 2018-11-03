@@ -1,4 +1,4 @@
-# aws-client-spring-boot-autoconfigure
+# spring-boot-aws-client-configuration
 
 AWS には数多くのクライアントクラスが定義されており、各々のクライアントインスタンスが個別に設定値を持っています。
 
@@ -45,7 +45,7 @@ class AwsClientConfiguration {
 }
 ```
 
-aws-client-spring-boot-autoconfigure はこれらの設定を省力化・標準化することにより、
+spring-boot-aws-client-configuration はこれらの設定を省力化・標準化することにより、
 AWS クライアントを簡単に利用できるようにします。
 
 ```java
@@ -60,6 +60,11 @@ class AwsClientConfiguration {
 }
 ```
 
+```properties
+aws.sqs.client.connection-timeout=2500
+aws.sqs.client.socket-timeout=25000
+```
+
 
 ## 環境要件
 
@@ -69,7 +74,7 @@ class AwsClientConfiguration {
 
 ## クライアントの登録
 
-aws-client-spring-boot-autoconfigure は、`@EnableAwsClient` アノテーションで指定した AWS クライアントを bean 登録します。
+spring-boot-aws-client-configuration は、`@EnableAwsClient` アノテーションで指定した AWS クライアントを bean 登録します。
 
 登録する bean 名には、AWS クライアントインターフェースの FQCN を使います。
 
@@ -172,7 +177,7 @@ aws.s3.force-global-bucket-access-enabled=true
 `com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder` です。
 
 このクライアントビルダーは `EncryptionMaterialsProvider` を要求します。
-aws-client-spring-boot-autoconfigure は、
+spring-boot-aws-client-configuration は、
 `com.amazonaws.services.s3.model.EncryptionMaterialsProvider`
 という名前を持つ bean を `EncryptionMaterialsProvider` として利用し、
 `AmazonS3Encryption` をビルドします。
@@ -207,7 +212,7 @@ Pull Request をお待ちしております。
 
 ## Contribution
 
-1. Fork ([https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork](https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork))
+1. Fork ([https://github.com/dai0304/spring-boot-aws-client-configuration/fork](https://github.com/dai0304/spring-boot-aws-client-configuration/fork))
 2. Create a feature branch named like `feature/something_awesome_feature` from `development` branch
 3. Commit your changes
 4. Rebase your local changes against the `develop` branch
