@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.autoconfigure;
+package jp.xet.spring.aws.configuration;
 
-import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeMethod;
+import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeMethod;
 
 import java.util.Map;
 import java.util.Optional;
@@ -29,8 +29,8 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
-import jp.xet.spring.aws.autoconfigure.AwsClientConfiguration.AwsClientProperties;
-import jp.xet.spring.aws.autoconfigure.AwsClientConfiguration.AwsS3ClientProperties;
+import jp.xet.spring.aws.configuration.AwsClientConfiguration.AwsClientProperties;
+import jp.xet.spring.aws.configuration.AwsClientConfiguration.AwsS3ClientProperties;
 
 /**
  * Spring configuration class to configure AWS client builders.
