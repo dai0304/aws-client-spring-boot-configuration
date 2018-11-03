@@ -62,7 +62,7 @@ class AwsClientConfiguration {
 
 ## Environment Prerequisites
 
-* [Spring Boot](https://spring.io/projects/spring-boot) 2.0.x
+* [Spring Boot](https://spring.io/projects/spring-boot) 2.0.x or 2.1.x
 * [AWS SDK for Java](https://aws.amazon.com/jp/sdkforjava/) 1.11.x
 
 
