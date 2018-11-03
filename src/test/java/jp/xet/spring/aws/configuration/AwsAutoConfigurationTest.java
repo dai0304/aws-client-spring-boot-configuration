@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.autoconfigure; // NOPMD CouplingBetweenObjects
+package jp.xet.spring.aws.configuration; // NOPMD CouplingBetweenObjects
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

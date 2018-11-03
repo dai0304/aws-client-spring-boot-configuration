@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.autoconfigure;
+package jp.xet.spring.aws.configuration;
 
-import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeMethod;
-import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeStaticMethod;
+import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeMethod;
+import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeStaticMethod;
 
 import lombok.extern.slf4j.Slf4j;
 
