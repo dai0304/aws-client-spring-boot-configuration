@@ -36,16 +36,6 @@ class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 	private static final String ENCRYPTION_CLIENT = "com.amazonaws.services.s3.AmazonS3Encryption";
 	
 	
-	private static boolean isConfigurable(BeanDefinitionRegistry registry, Class<?> clientClass) {
-		if (clientClass.getName().equals(ENCRYPTION_CLIENT)
-				&& registry.containsBeanDefinition(AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER) == false) {
-			log.debug("Skip {} -- " + AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER + " is not configured",
-					clientClass);
-			return false;
-		}
-		return true;
-	}
-	
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 		log.trace("registerBeanDefinitions: {}", registry);
@@ -53,6 +43,7 @@ class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 		AnnotationAttributes attributes = AnnotationAttributes.fromMap(
 				importingClassMetadata.getAnnotationAttributes(EnableAwsClient.class.getName(), false));
 		if (attributes == null) {
+			log.warn("Attributes of EnableAwsClient is null.");
 			return;
 		}
 		Class<?>[] clientClasses = attributes.getClassArray("value");
@@ -64,13 +55,16 @@ class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 	private void registerAwsClient(BeanDefinitionRegistry registry, Class<?> clientClass) {
 		try {
 			log.trace("Attempt to configure AWS client: {}", clientClass);
-			if (isConfigurable(registry, clientClass) == false) {
+			if (clientClass.getName().equals(ENCRYPTION_CLIENT)
+					&& registry.containsBeanDefinition(AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER) == false) {
+				log.debug("Skip.  " + AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER
+						+ " for " + ENCRYPTION_CLIENT + " is not configured");
 				return;
 			}
 			
 			Class<?> builderClass = Class.forName(clientClass.getName() + "ClientBuilder");
 			if (registry.containsBeanDefinition(clientClass.getName())) {
-				log.debug("Skip {} -- already configured", clientClass.getName());
+				log.debug("Skip.  Bean {} is already configured", clientClass.getName());
 				return;
 			}
 			
@@ -80,7 +74,7 @@ class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 			
 			log.trace("AWS client {} is configured", clientClass.getName());
 		} catch (ClassNotFoundException e) {
-			log.trace("Skip.  Builder class for {} is not found in classpath", clientClass);
+			log.warn("Skip.  Builder class for {} is not found in classpath", clientClass);
 			// ignore
 		} catch (IllegalStateException | UndeclaredThrowableException e) {
 			log.error("Illegal builder for the client {}", clientClass, e);
