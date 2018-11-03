@@ -88,8 +88,8 @@ dependencies {
 	implementation "org.springframework.boot:spring-boot-autoconfigure"
 	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 	compileOnly "com.amazonaws:aws-java-sdk-core:$awsJavaSdkVersion"
-	compileOnly "org.projectlombok:lombok"
-	annotationProcessor "org.projectlombok:lombok"
+	compileOnly "org.projectlombok:lombok:$lombokVersion"
+	annotationProcessor "org.projectlombok:lombok:$lombokVersion"
 
 	testImplementation "org.springframework.boot:spring-boot-starter-test"
 	testImplementation "org.springframework.boot:spring-boot-starter-logging"
@@ -97,8 +97,8 @@ dependencies {
 	testImplementation("com.amazonaws:aws-java-sdk:$awsJavaSdkVersion") {
 		exclude group: 'com.amazonaws', module: 'aws-java-sdk-simpledb'
 	}
-	testCompileOnly "org.projectlombok:lombok"
-	testAnnotationProcessor "org.projectlombok:lombok"
+	testCompileOnly "org.projectlombok:lombok:$lombokVersion"
+	testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
 
 	spotbugsPlugins "com.h3xstream.findsecbugs:findsecbugs-plugin:$findsecbugsVersion"
 }
@@ -118,5 +118,5 @@ configurations.all {
 
 // ======== wrapper ========
 wrapper {
-	gradleVersion = "4.7"
+	gradleVersion = "4.10.2"
 }
