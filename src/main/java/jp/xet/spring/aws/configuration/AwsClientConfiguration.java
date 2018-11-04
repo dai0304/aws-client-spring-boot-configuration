@@ -13,30 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.autoconfigure;
+package jp.xet.spring.aws.configuration;
 
-import java.lang.reflect.UndeclaredThrowableException;
+import java.util.HashMap;
 
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.Data;
 
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 /**
- * Spring auto-configuration for AWS Clients.
- * 
- * <p>See {@code META-INF/aws.builders}</p>
+ * Spring configuration for AWS Clients.
  * 
  * <ul>
  *     <li>{@code aws.<service-package-name>[-async].client.<property>} - the {@link ClientConfiguration} to be used
- *         by the client. (ClientConfiguration)</li>
+ *         by the client.</li>
  *     <li>{@code aws.<service-package-name>[-async].endpoint.service-endpoint} - The service endpoint either with
  *         or without the protocol (e.g. https://sns.us-west-1.amazonaws.com or sns.us-west-1.amazonaws.com) (string)</li>
  *     <li>{@code aws.<service-package-name>[-async].endpoint.signing-region} - the region to use
@@ -45,14 +40,12 @@ import com.amazonaws.ClientConfiguration;
  *         This will be used to determine both the service endpoint (eg: https://sns.us-west-1.amazonaws.com)
  *         and signing region (eg: us-west-1) for requests.
  *         This value is used only if any endpoint configuration is not set. (string)</li>
- *     <li>{@code aws.<service-package-name>[-async].enabled} - (boolean)</li>
  * </ul>
  * 
  * <h3>Default client configurations.</h3>
  * 
  * <ul>
- *     <li>{@code aws.default[-async].client.<property>} - the {@link ClientConfiguration} to be used
- *         by the client. (ClientConfiguration)</li>
+ *     <li>{@code aws.default[-async].client.<property>} - the {@link ClientConfiguration} to be used by the client.</li>
  *     <li>{@code aws.default[-async].endpoint.service-endpoint} - The service endpoint either with
  *         or without the protocol (e.g. https://sns.us-west-1.amazonaws.com or sns.us-west-1.amazonaws.com) (string)</li>
  *     <li>{@code aws.default[-async].endpoint.signing-region} - the region to use
@@ -83,73 +76,72 @@ import com.amazonaws.ClientConfiguration;
  * @since #version#
  */
 @Configuration
-@Import(AwsClientBuilderConfiguration.class)
-@Slf4j
-@RequiredArgsConstructor
-public class AwsAutoConfiguration implements InitializingBean {
+class AwsClientConfiguration {
 	
-	private final AwsClientBuilderConfiguration awsClientBuilderConfiguration;
-	
-	private final ConfigurableBeanFactory beanFactory;
-	
-	@Setter
-	@Value("${aws.sync-enabled:true}")
-	private boolean syncEnabled;
-	
-	@Setter
-	@Value("${aws.async-enabled:false}")
-	private boolean asyncEnabled;
-	
-	
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		if (syncEnabled == false) {
-			log.debug("AWS sync client is disabled.");
-		}
-		if (asyncEnabled == false) {
-			log.debug("AWS async client is disabled.");
-		}
-		AwsClientBuilderLoader.loadBuilderNames().forEach(this::registerAwsClient);
+	@Bean
+	public static AwsClientPropertiesMap awsClientPropertiesMap() {
+		return new AwsClientPropertiesMap();
 	}
 	
-	private void registerAwsClient(String builderClassName) {
-		try {
-			log.trace("Attempt to configure AWS client: {}", builderClassName);
-			if (syncEnabled == false && builderClassName.endsWith("AsyncClientBuilder") == false) {
-				log.trace("Skip {} -- sync client is disabled.", builderClassName);
-				return;
-			}
-			if (asyncEnabled == false && builderClassName.endsWith("AsyncClientBuilder")) {
-				log.trace("Skip {} -- async client is disabled", builderClassName);
-				return;
-			}
-			if (awsClientBuilderConfiguration.isConfigurable(builderClassName) == false) {
-				return;
-			}
-			
-			Class<?> builderClass = Class.forName(builderClassName);
-			Class<?> clientClass = AwsClientUtil.getClientClass(builderClass);
-			
-			if (beanFactory.containsBean(clientClass.getName())) {
-				log.debug("Skip {} -- already configured", clientClass.getName());
-				return;
-			}
-			
-			Object builder = AwsClientUtil.createBuilder(builderClass);
-			awsClientBuilderConfiguration.configureBuilder(builderClassName, clientClass, builder);
-			Object client = AwsClientUtil.buildClient(builder);
-			
-			beanFactory.registerSingleton(clientClass.getName(), client);
-			log.trace("AWS client {} is configured", clientClass.getName());
-		} catch (ClassNotFoundException e) {
-			log.trace("Skip.  Builder class is not found in classpath: {}", builderClassName);
-			// ignore
-		} catch (ClientDisabledException e) {
-			log.debug("Skip.  Client auto-configuration is disabled: {}", builderClassName);
-			// ignore
-		} catch (ClientClassNotDeterminedException | IllegalStateException | UndeclaredThrowableException e) {
-			log.error("Illegal builder: {}", builderClassName, e);
-			throw e;
+	@Bean
+	public static AwsS3ClientProperties awsS3ClientProperties() {
+		return new AwsS3ClientProperties();
+	}
+	
+	
+	@SuppressWarnings("serial")
+	@ConfigurationProperties(value = "aws", ignoreInvalidFields = true)
+	private static class AwsClientPropertiesMap extends HashMap<String, AwsClientProperties> {
+	}
+	
+	@Data
+	static class AwsClientProperties {
+		
+		private ClientConfiguration client;
+		
+		private MutableEndpointConfiguration endpoint;
+		
+		private String region;
+		
+		
+		EndpointConfiguration getEndpoint() {
+			return endpoint == null ? null : endpoint.toEndpointConfiguration();
 		}
+	}
+	
+	/**
+	 * @see <a href="https://github.com/spring-projects/spring-boot/issues/8762">spring-boot#8762</a>
+	 */
+	@Data
+	static class MutableEndpointConfiguration {
+		
+		private String serviceEndpoint;
+		
+		private String signingRegion;
+		
+		
+		EndpointConfiguration toEndpointConfiguration() {
+			if (serviceEndpoint != null) {
+				return new EndpointConfiguration(serviceEndpoint, signingRegion);
+			}
+			return null;
+		}
+	}
+	
+	@Data
+	@ConfigurationProperties(value = "aws.s3", ignoreInvalidFields = true)
+	static class AwsS3ClientProperties {
+		
+		private Boolean pathStyleAccessEnabled;
+		
+		private Boolean chunkedEncodingDisabled;
+		
+		private Boolean accelerateModeEnabled;
+		
+		private Boolean payloadSigningEnabled;
+		
+		private Boolean dualstackEnabled;
+		
+		private Boolean forceGlobalBucketAccessEnabled;
 	}
 }

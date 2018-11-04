@@ -1,4 +1,4 @@
-# aws-client-spring-boot-autoconfigure
+# spring-boot-aws-client-configuration
 
 Many AWS client classes are defined, and each client instance has its own configurations.
 
@@ -45,59 +45,37 @@ class AwsClientConfiguration {
 }
 ```
 
-aws-client-spring-boot-autoconfigure standardizes and makes easy these configuration.
+spring-boot-aws-client-configuration standardizes and makes easy these configuration.
+
+```java
+@Configuration
+@EnableAwsClient({
+  AmazonS3.class,
+  AmazonSQS.class,
+  AmazonSNS.class,
+  AmazonDynamoDB.class
+})
+class AwsClientConfiguration {
+}
+```
+
+```properties
+aws.sqs.client.connection-timeout=2500
+aws.sqs.client.socket-timeout=25000
+```
 
 
 ## Environment Prerequisites
 
-* [Spring Boot](https://spring.io/projects/spring-boot) 2.0.x
+* [Spring Boot](https://spring.io/projects/spring-boot) 2.0.x or 2.1.x
 * [AWS SDK for Java](https://aws.amazon.com/jp/sdkforjava/) 1.11.x
 
 
 ## Auto client registration
 
-aws-client-spring-boot-autoconfigure automatically registers
-*typical AWS clients* (described below) when the environment satisfies
-all of the following conditions.
-
-* There is the aws-client-spring-boot-autoconfigure jar in the classpath
-* There is the SDK jar of the applicable AWS service in the classpath
-* A bean whose name is FQCN of the AWS client interface has not been registered yet
+spring-boot-aws-client-configuration registers AWS clients specified by `@EnableAwsClient` annotation.
 
 The bean name to be registered is the FQCN of the AWS client interface.
-
-### Typical AWS clients
-
-*Typical AWS clienst* are that we include in a list of clients we have defined.
-
-Specifically, refer to [the built-in aws.builders file](src/main/resources/META-INF/aws.builders).
-Although the classes in this file may be added or removed for each release version,
-it always includes at least the following clients.
-
-* `com.amazonaws.services.s3.AmazonS3ClientBuilder`
-* `com.amazonaws.services.sns.AmazonSNSClientBuilder`
-* `com.amazonaws.services.sqs.AmazonSQSClientBuilder`
-* `com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder`
-* `com.amazonaws.services.kinesis.AmazonKinesisClientBuilder`
-
-### How to add non-typical client?
-
-Create `META-INF/aws.builders` in your application classpath,
-and describe the FQCN of the client builder with the line break separator in that file.
-
-Lines beginning with `#` are considered comments.
-
-### How to use async client?  And how to disable sync client?
-
-Registering async client is disabled by default.
-If you want to use async client, set `aws.async-enabled=true` as a property of Spring Boot 
-
-Registering sync client is enabled by default.
-If you want not to use sync client, set `aws.sync-enabled=false` as a property of Spring Boot 
-
-### How to disable one of the typical clients?
-
-Refer to the client configuration section.
 
 
 ## Client configuration
@@ -144,16 +122,6 @@ However, if you set `EndpointConfiguration`, that setting takes precedence.
 
 ```properties
 aws.dynamodbv2.region=eu-central-1
-```
-
-### How to disable auto client registration?
-
-Set `aws.<service-name>.enabled` as the property of Spring Boot.
-
-#### Configuration example for Kinesis
-
-```properties
-aws.kinesis.enabled=false
 ```
 
 ### How to make individual settings with sync client and async client?
@@ -208,7 +176,7 @@ The client builder for `AmazonS3Encryption` is
 `com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder`.
 
 This client builder requires `EncryptionMaterialsProvider`.
-aws-client-spring-boot-autoconfigure builds `AmazonS3Encryption`
+spring-boot-aws-client-configuration builds `AmazonS3Encryption`
 using a bean named `com.amazonaws.services.s3.model.EncryptionMaterialsProvider`
 as `EncryptionMaterialsProvider`. 
 
@@ -237,12 +205,12 @@ so different settings can not be made for each.
 ### Building 'AmazonKinesisVideoPutMedia`
 
 `AmazonKinesisVideoPutMediaClientBuilder` is not a subtype of `AwsClientBuilder`.
-Although it supports automatic client registration, it can not configure the client.
+Although it supports client registration, it can not configure the client.
 
 
 ## Contribution
 
-1. Fork ([https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork](https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork))
+1. Fork ([https://github.com/dai0304/spring-boot-aws-client-configuration/fork](https://github.com/dai0304/spring-boot-aws-client-configuration/fork))
 2. Create a feature branch named like `feature/something_awesome_feature` from `development` branch
 3. Commit your changes
 4. Rebase your local changes against the `develop` branch

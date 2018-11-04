@@ -1,4 +1,4 @@
-# aws-client-spring-boot-autoconfigure
+# spring-boot-aws-client-configuration
 
 AWS には数多くのクライアントクラスが定義されており、各々のクライアントインスタンスが個別に設定値を持っています。
 
@@ -45,58 +45,38 @@ class AwsClientConfiguration {
 }
 ```
 
-aws-client-spring-boot-autoconfigure はこれらの設定を省力化・標準化することにより、
+spring-boot-aws-client-configuration はこれらの設定を省力化・標準化することにより、
 AWS クライアントを簡単に利用できるようにします。
+
+```java
+@Configuration
+@EnableAwsClient({
+  AmazonS3.class,
+  AmazonSQS.class,
+  AmazonSNS.class,
+  AmazonDynamoDB.class
+})
+class AwsClientConfiguration {
+}
+```
+
+```properties
+aws.sqs.client.connection-timeout=2500
+aws.sqs.client.socket-timeout=25000
+```
 
 
 ## 環境要件
 
-* [Spring Boot](https://spring.io/projects/spring-boot) 2.0.x
+* [Spring Boot](https://spring.io/projects/spring-boot) 2.0.x or 2.1.x
 * [AWS SDK for Java](https://aws.amazon.com/jp/sdkforjava/) 1.11.x
 
 
-## クライアントの自動登録
+## クライアントの登録
 
-aws-client-spring-boot-autoconfigure は、環境が次の条件をすべて満たした時、
-*典型的な AWS クライアント* (後述) を自動登録します。
-
-* aws-client-spring-boot-autoconfigure の jar が classpath にいること
-* 該当する AWS サービスの SDK jar が classpath にいること
-* AWS クライアントインターフェースの FQCN を名前に持つ bean が既に登録されていないこと
+spring-boot-aws-client-configuration は、`@EnableAwsClient` アノテーションで指定した AWS クライアントを bean 登録します。
 
 登録する bean 名には、AWS クライアントインターフェースの FQCN を使います。
-
-### 典型的な AWS クライアント
-
-*典型的な AWS クライアント*とは、我々が独自に定義したクライアントの一覧に含むクライアントです。
-
-具体的には[組み込みの aws.builders ファイル](src/main/resources/META-INF/aws.builders)を参照しくてださい。
-このファイルの内容はリリースバージョン毎に増減する場合がありますが、最低限次のクライアントを必ず含みます。
-
-* `com.amazonaws.services.s3.AmazonS3ClientBuilder`
-* `com.amazonaws.services.sns.AmazonSNSClientBuilder`
-* `com.amazonaws.services.sqs.AmazonSQSClientBuilder`
-* `com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder`
-* `com.amazonaws.services.kinesis.AmazonKinesisClientBuilder`
-
-### 典型的な AWS クライアントに含まれないクライアントを追加したい
-
-あなたのアプリケーションクラスパス内に `META-INF/aws.builders` を作成し、
-そのファイルにクライアントビルダーの FQCN を改行区切りで記述してください。
-
-`#` から始まる行はコメントとみなします。
-
-### 非同期クライアント (async client) を利用したい / 同期クライアントを無効にしたい
-
-非同期クライアント (async client) の登録はデフォルトで無効になっています。
-利用したい場合は Spring Boot のプロパティとして `aws.async-enabled=true` を設定してください。  
-
-同期クライアント (sync client) の登録はデフォルトで有効になっています。
-無効化したい場合は Spring Boot のプロパティとして `aws.sync-enabled=false` を設定してください。  
-
-### 典型的な AWS クライアントのうち特定のクライアントの自動登録を無効化したい
-
-クライアントの設定の項を参照してください。
 
 
 ## クライアントの設定
@@ -143,16 +123,6 @@ Spring Boot のプロパティとして `aws.<service-name>.region` の設定を
 
 ```properties
 aws.dynamodbv2.region=eu-central-1
-```
-
-### 自動登録を無効化したい
-
-Spring Boot のプロパティとして `aws.<service-name>.enabled` の設定を行います。
-
-#### Kinesis に対する設定例
-
-```properties
-aws.kinesis.enabled=false
 ```
 
 ### sync client と async client で個別の設定をしたい
@@ -207,7 +177,7 @@ aws.s3.force-global-bucket-access-enabled=true
 `com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder` です。
 
 このクライアントビルダーは `EncryptionMaterialsProvider` を要求します。
-aws-client-spring-boot-autoconfigure は、
+spring-boot-aws-client-configuration は、
 `com.amazonaws.services.s3.model.EncryptionMaterialsProvider`
 という名前を持つ bean を `EncryptionMaterialsProvider` として利用し、
 `AmazonS3Encryption` をビルドします。
@@ -237,12 +207,12 @@ Pull Request をお待ちしております。
 ### `AmazonKinesisVideoPutMedia` の設定はできません
 
 `AmazonKinesisVideoPutMediaClientBuilder` は `AwsClientBuilder` のサブタイプではありません。
-クライアントの自動登録はサポートしますが、プロパティからの設定を行うことはできません。
+クライアントの登録はサポートしますが、プロパティからの設定を行うことはできません。
 
 
 ## Contribution
 
-1. Fork ([https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork](https://github.com/dai0304/aws-client-spring-boot-autoconfigure/fork))
+1. Fork ([https://github.com/dai0304/spring-boot-aws-client-configuration/fork](https://github.com/dai0304/spring-boot-aws-client-configuration/fork))
 2. Create a feature branch named like `feature/something_awesome_feature` from `development` branch
 3. Commit your changes
 4. Rebase your local changes against the `develop` branch

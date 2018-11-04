@@ -13,50 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.autoconfigure;
+package jp.xet.spring.aws.configuration;
 
-import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeMethod;
-import static jp.xet.spring.aws.autoconfigure.InternalReflectionUtil.invokeStaticMethod;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
+import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeMethod;
+import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeStaticMethod;
 
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.util.ReflectionUtils;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 @Slf4j
 class AwsClientUtil {
-	
-	/**
-	 * Determine AWS client class from AWS client builder class.
-	 * 
-	 * @param builderClass AWS client builder class
-	 * @return AWS client class
-	 * @throws ClientClassNotDeterminedException if client class cannot be determined from {@code builderClass}
-	 */
-	static Class<?> getClientClass(Class<?> builderClass) {
-		try {
-			ParameterizedType t = (ParameterizedType) builderClass.getGenericSuperclass();
-			return (Class<?>) t.getActualTypeArguments()[1];
-		} catch (ClassCastException e) {
-			log.warn("Failed to get client type from generics: {}", builderClass);
-			
-			Method build = ReflectionUtils.findMethod(builderClass, "build");
-			if (build != null) {
-				Class<?> returnType = build.getReturnType();
-				
-				if (returnType.getPackage().getName().startsWith("com.amazonaws.services")) {
-					return returnType;
-				}
-			}
-			log.error("Client class cannot be determined: {}", builderClass);
-			throw new ClientClassNotDeterminedException(e);
-		}
-	}
 	
 	/**
 	 * Create AWS client builder.
@@ -107,7 +75,7 @@ class AwsClientUtil {
 	 * @param builder AWS client builder
 	 * @return AWS client
 	 */
-	static Object buildClient(Object builder) {
+	static <T> T buildClient(Object builder) {
 		return invokeMethod(builder, "build");
 	}
 }
