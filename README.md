@@ -6,16 +6,16 @@ Usualy, to use the AWS client in the Spring environment, describe the Java confi
 
 ```java
 @Configuration
-class AwsClientConfiguration {
+public class AwsClientConfiguration {
   
   @Bean
-  AmazonS3 amazonS3() {
+  public AmazonS3 amazonS3() {
     // unconfigurable!!
     return AmazonS3ClientBuilder.defaultClient();
   }
   
   @Bean
-  AmazonSQS amazonSQS() {
+  public AmazonSQS amazonSQS() {
     ClientConfiguration clientConfig = new ClientConfiguration()
         .withConnectionTimeout(2500) // hard-coded!!
         .withSocketTimeout(25000);
@@ -25,7 +25,7 @@ class AwsClientConfiguration {
   }
   
   @Bean
-  AmazonSNS amazonSNS(
+  public AmazonSNS amazonSNS(
       @Value("aws.sns.endpoint.service-endpoint") String serviceEndpoint,
       @Value("aws.sns.endpoint.signing-region") String signingRegion) {
     EndpointConfiguration endpointConfig = new EndpointConfiguration(serviceEndpoint, signingRegion);
@@ -35,7 +35,7 @@ class AwsClientConfiguration {
   }
   
   @Bean
-  AmazonDynamoDB amazonDynamoDB(
+  public AmazonDynamoDB amazonDynamoDB(
       // inconsisitent property name!!
       @Value("dynamodb.region") String region) {
     return AmazonDynamoDBClientBuilder.standard()
@@ -55,7 +55,7 @@ aws-client-spring-boot-configuration standardizes and makes easy these configura
   AmazonSNS.class,
   AmazonDynamoDB.class
 })
-class AwsClientConfiguration {
+public class AwsClientConfiguration {
 }
 ```
 
