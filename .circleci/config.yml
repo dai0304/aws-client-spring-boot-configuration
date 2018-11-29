@@ -10,7 +10,6 @@ jobs:
       TERM: dumb
     steps:
       - checkout
-      - setup_remote_docker
       - restore_cache:
           keys:
             - v1-{{ .Branch }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "build.gradle" }}-{{ checksum "gradle.properties" }}-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
@@ -22,14 +21,17 @@ jobs:
           name: Show version
           command: ./gradlew -v
       - run:
-          name: Run tests
-          command: ./gradlew check jacocoTestReport
+          name: Run tests for boot-2.0
+          command: ./gradlew clean test -PspringBootVersion=2.0.6.RELEASE
+      - run:
+          name: Run tests for boot-2.1
+          command: ./gradlew clean check jacocoTestReport
+      - store_test_results:
+          path: build/test-results
       - store_artifacts:
           name: Store artifacts
           path: build/reports
           destination: artifacts
-      - store_test_results:
-          path: build/test-results
       - deploy:
           name: Deploy to JFrog Bintray
           command: ./gradlew bintrayUpload
