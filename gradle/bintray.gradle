@@ -10,9 +10,9 @@ bintray {
 		repo = "maven"
 		name = project.name
 		desc = project.description
-		websiteUrl = "https://github.com/dai0304/spring-boot-aws-client-configuration"
-		issueTrackerUrl = "https://github.com/dai0304/spring-boot-aws-client-configuration/issues"
-		vcsUrl = "https://github.com/dai0304/spring-boot-aws-client-configuration.git"
+		websiteUrl = "https://github.com/dai0304/aws-client-spring-boot-configuration"
+		issueTrackerUrl = "https://github.com/dai0304/aws-client-spring-boot-configuration/issues"
+		vcsUrl = "https://github.com/dai0304/aws-client-spring-boot-configuration.git"
 		licenses = ["Apache-2.0"]
 		labels = ["AWS", "Spring framework"]
 	}
