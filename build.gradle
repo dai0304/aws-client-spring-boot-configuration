@@ -24,7 +24,7 @@ apply plugin: "io.spring.dependency-management"
 
 // basic configuration
 group = "jp.xet.spring.aws"
-ext.artifactId = "spring-boot-aws-client-configuration"
+ext.artifactId = "aws-client-spring-boot-configuration"
 
 // custom plugins
 apply plugin: "checkstyle"
