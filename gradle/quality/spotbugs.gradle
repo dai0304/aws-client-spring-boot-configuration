@@ -1,5 +1,5 @@
 spotbugs {
-	toolVersion = "3.1.5"
+	toolVersion = "3.1.9"
 	effort = "max"
 }
 spotbugsMain.excludeFilter = file("${rootProject.projectDir}/config/spotbugs/excludeFilter.xml")
