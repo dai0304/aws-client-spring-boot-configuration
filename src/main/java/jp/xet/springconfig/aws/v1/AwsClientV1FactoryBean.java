@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.configuration;
+package jp.xet.springconfig.aws.v1;
 
-import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeMethod;
+import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeMethod;
 
 import java.util.Map;
 import java.util.Optional;
@@ -29,8 +29,8 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
-import jp.xet.spring.aws.configuration.AwsClientConfiguration.AwsClientProperties;
-import jp.xet.spring.aws.configuration.AwsClientConfiguration.AwsS3ClientProperties;
+import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsClientV1Properties;
+import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsS3ClientV1Properties;
 
 /**
  * Spring configuration class to configure AWS client builders.
@@ -40,7 +40,7 @@ import jp.xet.spring.aws.configuration.AwsClientConfiguration.AwsS3ClientPropert
  */
 @Slf4j
 @RequiredArgsConstructor
-class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
+class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	private static final String DEFAULT_NAME = "default";
 	
@@ -52,20 +52,20 @@ class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 			"com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
 	
 	
-	private static Optional<AwsClientProperties> getAwsClientProperties(
-			Map<String, AwsClientProperties> stringAwsClientPropertiesMap, Class<?> clientClass) {
+	private static Optional<AwsClientV1Properties> getAwsClientProperties(
+			Map<String, AwsClientV1Properties> stringAwsClientPropertiesMap, Class<?> clientClass) {
 		try {
 			String servicePackageName = clientClass.getPackage().getName()
 				.substring("com.amazonaws.services.".length())
 				.replace('.', '-');
 			
 			if (clientClass.getName().endsWith("Async")) {
-				AwsClientProperties asyncProperties = stringAwsClientPropertiesMap.get(servicePackageName + "-async");
+				AwsClientV1Properties asyncProperties = stringAwsClientPropertiesMap.get(servicePackageName + "-async");
 				if (asyncProperties != null) {
 					return Optional.of(asyncProperties);
 				}
 			}
-			AwsClientProperties serviceProperties = stringAwsClientPropertiesMap.get(servicePackageName);
+			AwsClientV1Properties serviceProperties = stringAwsClientPropertiesMap.get(servicePackageName);
 			if (serviceProperties != null) {
 				return Optional.of(serviceProperties);
 			}
@@ -81,9 +81,9 @@ class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	private final Class<T> clientClass;
 	
-	private final Map<String, AwsClientProperties> awsClientPropertiesMap;
+	private final Map<String, AwsClientV1Properties> awsClientV1PropertiesMap;
 	
-	private final AwsS3ClientProperties awsS3ClientProperties;
+	private final AwsS3ClientV1Properties awsS3ClientV1Properties;
 	
 	
 	@Override
@@ -93,44 +93,45 @@ class AwsClientFactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	@Override
 	protected T createInstance() throws Exception {
-		Object builder = AwsClientUtil.createBuilder(builderClass);
+		Object builder = AwsClientV1Util.createBuilder(builderClass);
 		
 		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {
 			configureAmazonS3ClientBuilder(builder);
 		}
 		
-		Optional<AwsClientProperties> specificConfig = getAwsClientProperties(awsClientPropertiesMap, clientClass);
-		Optional<AwsClientProperties> defaultConfig = Optional.ofNullable(awsClientPropertiesMap.get(DEFAULT_NAME));
+		Optional<AwsClientV1Properties> specificConfig = getAwsClientProperties(awsClientV1PropertiesMap, clientClass);
+		Optional<AwsClientV1Properties> defaultConfig = Optional.ofNullable(awsClientV1PropertiesMap.get(DEFAULT_NAME));
 		
-		ClientConfiguration clientConfiguration = specificConfig.map(AwsClientProperties::getClient)
-			.orElseGet(() -> defaultConfig.map(AwsClientProperties::getClient).orElse(null));
-		AwsClientUtil.configureClientConfiguration(builder, clientConfiguration);
+		ClientConfiguration clientConfiguration = specificConfig.map(AwsClientV1Properties::getClient)
+			.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getClient).orElse(null));
+		AwsClientV1Util.configureClientConfiguration(builder, clientConfiguration);
 		
-		EndpointConfiguration endpointConfiguration = specificConfig.map(AwsClientProperties::getEndpoint)
-			.orElseGet(() -> defaultConfig.map(AwsClientProperties::getEndpoint).orElse(null));
+		EndpointConfiguration endpointConfiguration = specificConfig.map(AwsClientV1Properties::getEndpoint)
+			.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getEndpoint).orElse(null));
 		if (endpointConfiguration != null) {
-			AwsClientUtil.configureEndpointConfiguration(builder, endpointConfiguration);
+			AwsClientV1Util.configureEndpointConfiguration(builder, endpointConfiguration);
 		} else {
-			String region = specificConfig.map(AwsClientProperties::getRegion)
-				.orElseGet(() -> defaultConfig.map(AwsClientProperties::getRegion).orElse(null));
+			String region = specificConfig.map(AwsClientV1Properties::getRegion)
+				.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getRegion).orElse(null));
 			if (region != null) {
-				AwsClientUtil.configureRegion(builder, region);
+				AwsClientV1Util.configureRegion(builder, region);
 			}
 		}
 		
-		return AwsClientUtil.buildClient(builder);
+		return AwsClientV1Util.buildClient(builder);
 	}
 	
 	private void configureAmazonS3ClientBuilder(Object builder) {
 		try {
 			if (Class.forName(S3_BUILDER).isAssignableFrom(builder.getClass())) {
-				invokeMethod(builder, "setPathStyleAccessEnabled", awsS3ClientProperties.getPathStyleAccessEnabled());
-				invokeMethod(builder, "setChunkedEncodingDisabled", awsS3ClientProperties.getChunkedEncodingDisabled());
-				invokeMethod(builder, "setAccelerateModeEnabled", awsS3ClientProperties.getAccelerateModeEnabled());
-				invokeMethod(builder, "setPayloadSigningEnabled", awsS3ClientProperties.getPayloadSigningEnabled());
-				invokeMethod(builder, "setDualstackEnabled", awsS3ClientProperties.getDualstackEnabled());
+				invokeMethod(builder, "setPathStyleAccessEnabled", awsS3ClientV1Properties.getPathStyleAccessEnabled());
+				invokeMethod(builder, "setChunkedEncodingDisabled",
+						awsS3ClientV1Properties.getChunkedEncodingDisabled());
+				invokeMethod(builder, "setAccelerateModeEnabled", awsS3ClientV1Properties.getAccelerateModeEnabled());
+				invokeMethod(builder, "setPayloadSigningEnabled", awsS3ClientV1Properties.getPayloadSigningEnabled());
+				invokeMethod(builder, "setDualstackEnabled", awsS3ClientV1Properties.getDualstackEnabled());
 				invokeMethod(builder, "setForceGlobalBucketAccessEnabled",
-						awsS3ClientProperties.getForceGlobalBucketAccessEnabled());
+						awsS3ClientV1Properties.getForceGlobalBucketAccessEnabled());
 			}
 		} catch (ClassNotFoundException e) {
 			log.debug(S3_BUILDER + " is not found in classpath -- ignored", e);

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.configuration;
+package jp.xet.springconfig.aws.v1;
 
-import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeMethod;
-import static jp.xet.spring.aws.configuration.InternalReflectionUtil.invokeStaticMethod;
+import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeMethod;
+import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeStaticMethod;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +24,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 @Slf4j
-class AwsClientUtil {
+class AwsClientV1Util {
 	
 	/**
 	 * Create AWS client builder.
@@ -36,12 +36,12 @@ class AwsClientUtil {
 		return invokeStaticMethod(builderClass, "standard");
 	}
 	
-	static void configureClientConfiguration(Object builder, ClientConfiguration clientConfiguration) {
-		if (clientConfiguration == null) {
+	static void configureRegion(Object builder, String region) {
+		if (region == null) {
 			return;
 		}
 		try {
-			invokeMethod(builder, "setClientConfiguration", clientConfiguration);
+			invokeMethod(builder, "setRegion", region);
 		} catch (IllegalStateException e) {
 			log.warn(e.getMessage());
 		}
@@ -58,12 +58,12 @@ class AwsClientUtil {
 		}
 	}
 	
-	static void configureRegion(Object builder, String region) {
-		if (region == null) {
+	static void configureClientConfiguration(Object builder, ClientConfiguration clientConfiguration) {
+		if (clientConfiguration == null) {
 			return;
 		}
 		try {
-			invokeMethod(builder, "setRegion", region);
+			invokeMethod(builder, "setClientConfiguration", clientConfiguration);
 		} catch (IllegalStateException e) {
 			log.warn(e.getMessage());
 		}
@@ -74,6 +74,7 @@ class AwsClientUtil {
 	 * 
 	 * @param builder AWS client builder
 	 * @return AWS client
+	 * @see com.amazonaws.client.builder.AwsClientBuilder#build() 
 	 */
 	static <T> T buildClient(Object builder) {
 		return invokeMethod(builder, "build");

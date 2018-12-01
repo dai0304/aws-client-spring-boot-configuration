@@ -85,21 +85,35 @@ configurations {
 }
 
 dependencies {
-	implementation "org.springframework.boot:spring-boot-autoconfigure"
+	// spring
+	implementation "org.springframework.boot:spring-boot"
 	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
-	compileOnly "com.amazonaws:aws-java-sdk-core:$awsJavaSdkVersion"
+	
+	// aws
+	compileOnly "com.amazonaws:aws-java-sdk-core:$awsJavaSdk1Version"
+	compileOnly "software.amazon.awssdk:aws-core:$awsJavaSdk2Version"
+	
+	// lombok
 	compileOnly "org.projectlombok:lombok:$lombokVersion"
 	annotationProcessor "org.projectlombok:lombok:$lombokVersion"
-
+	testCompileOnly "org.projectlombok:lombok:$lombokVersion"
+	testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
+	
+	// test
 	testImplementation "org.springframework.boot:spring-boot-starter-test"
 	testImplementation "org.springframework.boot:spring-boot-starter-logging"
 	testImplementation 'org.assertj:assertj-core:3.10.0'
-	testImplementation("com.amazonaws:aws-java-sdk:$awsJavaSdkVersion") {
+	
+	// test AWS client v1
+	testImplementation("com.amazonaws:aws-java-sdk:$awsJavaSdk1Version") {
 		exclude group: 'com.amazonaws', module: 'aws-java-sdk-simpledb'
 	}
-	testCompileOnly "org.projectlombok:lombok:$lombokVersion"
-	testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
-
+	
+	// test AWS client v2
+	testImplementation "software.amazon.awssdk:aws-sdk-java:$awsJavaSdk2Version"
+	// testImplementation "software.amazon.awssdk:simpledb:2.0.0-preview-11"
+	
+	// build
 	spotbugsPlugins "com.h3xstream.findsecbugs:findsecbugs-plugin:$findsecbugsVersion"
 }
 

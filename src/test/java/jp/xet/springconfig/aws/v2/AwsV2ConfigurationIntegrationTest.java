@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.configuration;
+package jp.xet.springconfig.aws.v2;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,23 +22,24 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.Region;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.Region;
 
 /**
- * Integration test for {@link AwsClientConfiguration}.
+ * Integration test for {@link AwsClientV2Configuration}.
  *
  * @author miyamoto.daisuke
  * @since #version#
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = AwsAutoConfigurationIntegrationTest.TestApplication.class)
-public class AwsAutoConfigurationIntegrationTest {
+@SpringBootTest(classes = AwsV2ConfigurationIntegrationTest.TestApplication.class)
+public class AwsV2ConfigurationIntegrationTest {
 	
 	@Test
 	public void contextLoads() {
@@ -49,7 +50,8 @@ public class AwsAutoConfigurationIntegrationTest {
 	@Slf4j
 	@RequiredArgsConstructor
 	@SpringBootApplication
-	@EnableAwsClient(AmazonEC2.class)
+	@EnableAwsClientV2(Ec2Client.class)
+	@TestPropertySource(properties = "aws2.default.region=ap-northeast-1")
 	static class TestApplication implements CommandLineRunner {
 		
 		/**
@@ -62,13 +64,13 @@ public class AwsAutoConfigurationIntegrationTest {
 		}
 		
 		
-		private final AmazonEC2 ec2;
+		private final Ec2Client ec2;
 		
 		
 		@Override
 		public void run(String... args) throws Exception {
-			ec2.describeRegions().getRegions().stream()
-				.map(Region::getRegionName)
+			ec2.describeRegions().regions().stream()
+				.map(Region::regionName)
 				.forEach(log::info);
 		}
 	}
