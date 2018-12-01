@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.configuration;
+package jp.xet.springconfig.aws;
 
 import java.util.Locale;
 
@@ -24,11 +24,15 @@ import org.springframework.util.MethodInvoker;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
+/**
+ * Internal use only.
+ */
 @Slf4j
-class InternalReflectionUtil {
+@SuppressWarnings("javadoc")
+public class InternalReflectionUtil {
 	
 	@SuppressWarnings("unchecked")
-	static <T> T invokeMethod(Object target, String name, Object... args) {
+	public static <T> T invokeMethod(Object target, String name, Object... args) {
 		Assert.notNull(target, "Target object must not be null");
 		Assert.hasText(name, "Method name must not be empty");
 		
@@ -52,7 +56,7 @@ class InternalReflectionUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	static <T> T invokeStaticMethod(Class<?> target, String name, Object... args) {
+	public static <T> T invokeStaticMethod(Class<?> target, String name, Object... args) {
 		Assert.notNull(target, "Target object must not be null");
 		Assert.hasText(name, "Method name must not be empty");
 		

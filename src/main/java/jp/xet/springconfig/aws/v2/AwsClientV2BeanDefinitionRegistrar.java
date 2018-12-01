@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.configuration;
+package jp.xet.springconfig.aws.v2;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
@@ -31,19 +31,16 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 
 @Slf4j
-class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
-	
-	private static final String ENCRYPTION_CLIENT = "com.amazonaws.services.s3.AmazonS3Encryption";
-	
+class AwsClientV2BeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 	
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 		log.trace("registerBeanDefinitions: {}", registry);
 		
 		AnnotationAttributes attributes = AnnotationAttributes.fromMap(
-				importingClassMetadata.getAnnotationAttributes(EnableAwsClient.class.getName(), false));
+				importingClassMetadata.getAnnotationAttributes(EnableAwsClientV2.class.getName(), false));
 		if (attributes == null) {
-			log.warn("Attributes of EnableAwsClient is null.");
+			log.warn("Attributes of EnableAwsClientV2 is null.");
 			return;
 		}
 		Class<?>[] clientClasses = attributes.getClassArray("value");
@@ -55,41 +52,29 @@ class AwsBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
 	private void registerAwsClient(BeanDefinitionRegistry registry, Class<?> clientClass) {
 		try {
 			log.trace("Attempt to configure AWS client: {}", clientClass);
-			if (clientClass.getName().equals(ENCRYPTION_CLIENT)
-					&& registry.containsBeanDefinition(AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER) == false) {
-				log.debug("Skip.  " + AwsClientFactoryBean.ENCRYPTION_MATERIALS_PROVIDER
-						+ " for " + ENCRYPTION_CLIENT + " is not configured");
-				return;
-			}
-			
-			Class<?> builderClass = Class.forName(clientClass.getName() + "ClientBuilder");
 			if (registry.containsBeanDefinition(clientClass.getName())) {
 				log.debug("Skip.  Bean {} is already configured", clientClass.getName());
 				return;
 			}
 			
-			RootBeanDefinition clientBeanDef = createAwsClientBeanDefinition(builderClass, clientClass);
+			RootBeanDefinition clientBeanDef = createAwsClientBeanDefinition(clientClass);
 			BeanDefinitionHolder clientBDHolder = new BeanDefinitionHolder(clientBeanDef, clientClass.getName());
 			BeanDefinitionReaderUtils.registerBeanDefinition(clientBDHolder, registry);
 			
 			log.trace("AWS client {} is configured", clientClass.getName());
-		} catch (ClassNotFoundException e) {
-			log.warn("Skip.  Builder class for {} is not found in classpath", clientClass);
-			// ignore
 		} catch (IllegalStateException | UndeclaredThrowableException e) {
 			log.error("Illegal builder for the client {}", clientClass, e);
 			throw e;
 		}
 	}
 	
-	private RootBeanDefinition createAwsClientBeanDefinition(Class<?> builderClass, Class<?> clientClass) {
+	private RootBeanDefinition createAwsClientBeanDefinition(Class<?> clientClass) {
 		ConstructorArgumentValues ctorArgs = new ConstructorArgumentValues();
-		ctorArgs.addIndexedArgumentValue(0, builderClass);
-		ctorArgs.addIndexedArgumentValue(1, clientClass);
-		ctorArgs.addIndexedArgumentValue(2, new RuntimeBeanReference("awsClientPropertiesMap"));
-		ctorArgs.addIndexedArgumentValue(3, new RuntimeBeanReference("awsS3ClientProperties"));
+		ctorArgs.addIndexedArgumentValue(0, clientClass);
+		ctorArgs.addIndexedArgumentValue(1, new RuntimeBeanReference("awsClientV2PropertiesMap"));
+		ctorArgs.addIndexedArgumentValue(2, new RuntimeBeanReference("awsS3ClientV2Properties"));
 		
-		RootBeanDefinition clientBeanDef = new RootBeanDefinition(AwsClientFactoryBean.class);
+		RootBeanDefinition clientBeanDef = new RootBeanDefinition(AwsClientV2FactoryBean.class);
 		clientBeanDef.setTargetType(clientClass);
 		clientBeanDef.setConstructorArgumentValues(ctorArgs);
 		return clientBeanDef;

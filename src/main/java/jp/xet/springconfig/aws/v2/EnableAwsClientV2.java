@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jp.xet.spring.aws.configuration;
+package jp.xet.springconfig.aws.v2;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -24,12 +24,12 @@ import java.lang.annotation.Target;
 import org.springframework.context.annotation.Import;
 
 /**
- * Enables AWS client capability.   To be used
- * on @{@link org.springframework.context.annotation.Configuration} classes as follows:
+ * Enables AWS client v2 capability.
+ * To be used on @{@link org.springframework.context.annotation.Configuration} classes as follows:
  *
  * <pre class="code">
  * &#064;Configuration
- * &#064;EnableEnableAwsClient({AmazonS3.class, AmazonEC2Async.class})
+ * &#064;EnableAwsClientV2({S3Client.class, S3AsyncClient.class})
  * public class AppConfig {
  *
  *     // various &#064;Bean definitions
@@ -39,10 +39,10 @@ import org.springframework.context.annotation.Import;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Import({
-	AwsBeanDefinitionRegistrar.class,
-	AwsClientConfiguration.class
+	AwsClientV2BeanDefinitionRegistrar.class,
+	AwsClientV2Configuration.class
 })
-public @interface EnableAwsClient {
+public @interface EnableAwsClientV2 {
 	
 	/**
 	 * AWS client classes to be used in the application.
