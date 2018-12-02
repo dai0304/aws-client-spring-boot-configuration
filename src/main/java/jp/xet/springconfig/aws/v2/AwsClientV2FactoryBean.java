@@ -16,8 +16,17 @@
 package jp.xet.springconfig.aws.v2;
 
 import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeMethod;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.build;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureClientOverrideConfiguration;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureCredentialsProvider;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureEndpoint;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureHttpAsyncClientBuilder;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureHttpClient;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureHttpSyncClientBuilder;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureRegion;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.configureServiceConfiguration;
+import static jp.xet.springconfig.aws.v2.AwsClientV2Util.createBuilder;
 
-import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -25,6 +34,7 @@ import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
 import jp.xet.springconfig.aws.v2.AwsClientV2Configuration.AwsClientV2Properties;
@@ -35,7 +45,6 @@ import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.ServiceConfiguration;
 import software.amazon.awssdk.core.client.builder.SdkAsyncClientBuilder;
 import software.amazon.awssdk.core.client.builder.SdkSyncClientBuilder;
-import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 
@@ -80,6 +89,14 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 		}
 	}
 	
+	private static <T> Optional<T> getValue(AwsClientV2Properties specificConfig, AwsClientV2Properties defaultConfig,
+			Function<AwsClientV2Properties, T> f) {
+		T t = Optional.ofNullable(specificConfig).map(f)
+			.orElseGet(() -> Optional.ofNullable(defaultConfig).map(f)
+				.orElse(null));
+		return Optional.ofNullable(t);
+	}
+	
 	
 	private final Class<T> clientClass;
 	
@@ -95,67 +112,57 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	@Override
 	protected T createInstance() throws Exception {
-		Object builder = AwsClientV2Util.createBuilder(clientClass);
+		Object builder = createBuilder(clientClass);
+		configureBuilder(builder);
+		return build(builder);
+	}
+	
+	private void configureBuilder(Object builder) {
+		AwsClientV2Properties specificConfig = getAwsClientProperties(awsClientV2PropertiesMap, clientClass);
+		AwsClientV2Properties defaultConfig = awsClientV2PropertiesMap.get(DEFAULT_NAME);
+		
+		getValue(specificConfig, defaultConfig, AwsClientV2Properties::getClient)
+			.ifPresent(clientConfiguration -> configureClientOverrideConfiguration(builder, clientConfiguration));
+		
+		getValue(specificConfig, defaultConfig, AwsClientV2Properties::getEndpoint)
+			.ifPresent(endpoint -> configureEndpoint(builder, endpoint));
+		
+		getValue(specificConfig, defaultConfig, AwsClientV2Properties::getRegion)
+			.ifPresent(region -> configureRegion(builder, region));
+		
+		BeanFactory beanFactory = getBeanFactory();
+		if (beanFactory != null) {
+			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getHttpClientBuilderBeanName)
+				.ifPresent(httpClientBuilderBeanName -> {
+					if (builder instanceof SdkSyncClientBuilder) {
+						SdkHttpClient.Builder<?> sdkHttpClientBuilder =
+								beanFactory.getBean(httpClientBuilderBeanName, SdkHttpClient.Builder.class);
+						configureHttpSyncClientBuilder(builder, sdkHttpClientBuilder);
+					}
+					if (builder instanceof SdkAsyncClientBuilder) {
+						SdkAsyncHttpClient.Builder<?> sdkHttpClientBuilder =
+								beanFactory.getBean(httpClientBuilderBeanName, SdkAsyncHttpClient.Builder.class);
+						configureHttpAsyncClientBuilder(builder, sdkHttpClientBuilder);
+					}
+				});
+			
+			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getHttpClientBeanName)
+				.ifPresent(httpClientBeanName -> {
+					SdkHttpClient sdkHttpClient = beanFactory.getBean(httpClientBeanName, SdkHttpClient.class);
+					configureHttpClient(builder, sdkHttpClient);
+				});
+			
+			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getCredentialsProviderBeanName)
+				.ifPresent(credentialsProviderBeanName -> {
+					AwsCredentialsProvider credentialsProvider =
+							beanFactory.getBean(credentialsProviderBeanName, AwsCredentialsProvider.class);
+					configureCredentialsProvider(builder, credentialsProvider);
+				});
+		}
 		
 		if (clientClass.getName().equals(S3_CLIENT)) {
 			configureAmazonS3ClientBuilder(builder);
 		}
-		
-		AwsClientV2Properties specificConfig = getAwsClientProperties(awsClientV2PropertiesMap, clientClass);
-		AwsClientV2Properties defaultConfig = awsClientV2PropertiesMap.get(DEFAULT_NAME);
-		
-		ClientOverrideConfiguration clientConfiguration =
-				getValue(specificConfig, defaultConfig, AwsClientV2Properties::getClient);
-		AwsClientV2Util.configureClientOverrideConfiguration(builder, clientConfiguration);
-		
-		URI endpoint = getValue(specificConfig, defaultConfig, AwsClientV2Properties::getEndpoint);
-		if (endpoint != null) {
-			AwsClientV2Util.configureEndpoint(builder, endpoint);
-		}
-		
-		String region = getValue(specificConfig, defaultConfig, AwsClientV2Properties::getRegion);
-		if (region != null) {
-			AwsClientV2Util.configureRegion(builder, region);
-		}
-		
-		String httpClientBuilderBeanName =
-				getValue(specificConfig, defaultConfig, AwsClientV2Properties::getHttpClientBuilderBeanName);
-		if (httpClientBuilderBeanName != null) {
-			if (builder instanceof SdkSyncClientBuilder) {
-				SdkHttpClient.Builder<?> sdkHttpClientBuilder =
-						getBeanFactory().getBean(httpClientBuilderBeanName, SdkHttpClient.Builder.class);
-				AwsClientV2Util.configureHttpSyncClientBuilder(builder, sdkHttpClientBuilder);
-			}
-			if (builder instanceof SdkAsyncClientBuilder) {
-				SdkAsyncHttpClient.Builder<?> sdkHttpClientBuilder =
-						getBeanFactory().getBean(httpClientBuilderBeanName, SdkAsyncHttpClient.Builder.class);
-				AwsClientV2Util.configureHttpAsyncClientBuilder(builder, sdkHttpClientBuilder);
-			}
-		}
-		
-		String httpClientBeanName =
-				getValue(specificConfig, defaultConfig, AwsClientV2Properties::getHttpClientBeanName);
-		if (httpClientBeanName != null) {
-			SdkHttpClient sdkHttpClient = getBeanFactory().getBean(httpClientBeanName, SdkHttpClient.class);
-			AwsClientV2Util.configureHttpClient(builder, sdkHttpClient);
-		}
-		
-		String credentialsProviderBeanName =
-				getValue(specificConfig, defaultConfig, AwsClientV2Properties::getCredentialsProviderBeanName);
-		if (credentialsProviderBeanName != null) {
-			AwsCredentialsProvider credentialsProvider =
-					getBeanFactory().getBean(credentialsProviderBeanName, AwsCredentialsProvider.class);
-			AwsClientV2Util.configureCredentialsProvider(builder, credentialsProvider);
-		}
-		
-		return AwsClientV2Util.build(builder);
-	}
-	
-	private static <T> T getValue(AwsClientV2Properties specificConfig, AwsClientV2Properties defaultConfig,
-			Function<AwsClientV2Properties, T> f) {
-		return Optional.ofNullable(specificConfig).map(f)
-			.orElseGet(() -> Optional.ofNullable(defaultConfig).map(f)
-				.orElse(null));
 	}
 	
 	@Override
@@ -167,13 +174,13 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	private void configureAmazonS3ClientBuilder(Object builder) {
 		try {
-			Object configBuilder = AwsClientV2Util.createBuilder(Class.forName(S3_CONFIG));
+			Object configBuilder = createBuilder(Class.forName(S3_CONFIG));
 			invokeMethod(configBuilder, "pathStyleAccessEnabled", awsS3ClientV2Properties.getPathStyleAccessEnabled());
 			invokeMethod(configBuilder, "chunkedEncodingEnabled", awsS3ClientV2Properties.getChunkedEncodingEnabled());
 			invokeMethod(configBuilder, "accelerateModeEnabled", awsS3ClientV2Properties.getAccelerateModeEnabled());
 			invokeMethod(configBuilder, "dualstackEnabled", awsS3ClientV2Properties.getDualstackEnabled());
-			ServiceConfiguration serviceConfiguration = AwsClientV2Util.build(configBuilder);
-			AwsClientV2Util.configureServiceConfiguration(builder, serviceConfiguration);
+			ServiceConfiguration serviceConfiguration = build(configBuilder);
+			configureServiceConfiguration(builder, serviceConfiguration);
 		} catch (ClassNotFoundException e) {
 			log.debug(S3_CONFIG + " is not found in classpath -- ignored", e);
 		}

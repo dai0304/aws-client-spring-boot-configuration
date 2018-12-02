@@ -94,11 +94,11 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 	@Override
 	protected T createInstance() throws Exception {
 		Object builder = AwsClientV1Util.createBuilder(builderClass);
-		
-		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {
-			configureAmazonS3ClientBuilder(builder);
-		}
-		
+		configureBuilder(builder);
+		return AwsClientV1Util.buildClient(builder);
+	}
+	
+	private void configureBuilder(Object builder) {
 		Optional<AwsClientV1Properties> specificConfig = getAwsClientProperties(awsClientV1PropertiesMap, clientClass);
 		Optional<AwsClientV1Properties> defaultConfig = Optional.ofNullable(awsClientV1PropertiesMap.get(DEFAULT_NAME));
 		
@@ -118,7 +118,9 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 			}
 		}
 		
-		return AwsClientV1Util.buildClient(builder);
+		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {
+			configureAmazonS3ClientBuilder(builder);
+		}
 	}
 	
 	private void configureAmazonS3ClientBuilder(Object builder) {
