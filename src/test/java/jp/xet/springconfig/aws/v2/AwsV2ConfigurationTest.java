@@ -37,7 +37,10 @@ import software.amazon.awssdk.awscore.client.config.AwsClientOption;
 import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
 import software.amazon.awssdk.core.client.config.SdkClientOption;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2AsyncClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
@@ -62,6 +65,10 @@ public class AwsV2ConfigurationTest {
 	private static final AwsCredentialsProvider MOCK_CREDENTIALS_PROVIDER = mock(AwsCredentialsProvider.class);
 	
 	private static final SdkAsyncHttpClient MOCK_SDK_ASYNC_HTTP_CLIENT = mock(SdkAsyncHttpClient.class);
+	
+	private static final SdkAsyncHttpClient MOCK_SDK_ASYNC_HTTP_CLIENT2 = mock(SdkAsyncHttpClient.class);
+	
+	private static final SdkHttpClient MOCK_SDK_HTTP_CLIENT = mock(SdkHttpClient.class);
 	
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(AwsClientV2Configuration.class));
@@ -201,25 +208,118 @@ public class AwsV2ConfigurationTest {
 	
 	
 	@Configuration
-	@EnableAwsClientV2(Ec2AsyncClient.class)
+	@EnableAwsClientV2({
+		Ec2Client.class,
+		Ec2AsyncClient.class,
+		SqsClient.class,
+		SqsAsyncClient.class
+	})
 	@EnableConfigurationProperties
-	static class ExampleSdkClientBuilderConfiguration {
+	static class ExampleSdkHttpClientBuilderConfiguration {
 		
 		@Bean
-		public SdkAsyncHttpClient.Builder<?> exampleSdkClientBuilder() {
+		public SdkHttpClient.Builder<?> exampleSdkHttpClientBuilder() {
+			SdkHttpClient.Builder<?> builder = mock(SdkHttpClient.Builder.class);
+			when(builder.buildWithDefaults(any())).thenReturn(MOCK_SDK_HTTP_CLIENT);
+			return builder;
+		}
+		
+		@Bean
+		public SdkAsyncHttpClient.Builder<?> exampleSdkAsyncHttpClientBuilder() {
 			SdkAsyncHttpClient.Builder<?> builder = mock(SdkAsyncHttpClient.Builder.class);
 			when(builder.buildWithDefaults(any())).thenReturn(MOCK_SDK_ASYNC_HTTP_CLIENT);
+			return builder;
+		}
+		
+		@Bean
+		public SdkAsyncHttpClient.Builder<?> exampleSdkAsyncHttpClientBuilderForEc2() {
+			SdkAsyncHttpClient.Builder<?> builder = mock(SdkAsyncHttpClient.Builder.class);
+			when(builder.buildWithDefaults(any())).thenReturn(MOCK_SDK_ASYNC_HTTP_CLIENT2);
 			return builder;
 		}
 	}
 	
 	
 	@Test
-	public void sdkClientBuilderConfiguration() {
-		this.contextRunner.withUserConfiguration(ExampleSdkClientBuilderConfiguration.class)
-			.withPropertyValues("aws2.default.http-client-builder-bean-name=exampleSdkClientBuilder")
+	public void sdkHttpClientBuilderConfiguration() {
+		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
+			.withPropertyValues("aws2.ec2.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
 			.run(context -> {
+				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isInstanceOf(NettyNioAsyncHttpClient.class);
+				});
+				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isInstanceOf(ApacheHttpClient.class);
+				});
+				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isInstanceOf(NettyNioAsyncHttpClient.class);
+				});
+			});
+	}
+	
+	@Test
+	public void sdkHttpClientBuilderDefaultConfiguration() {
+		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
+			.withPropertyValues("aws2.default.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
+			.withPropertyValues("aws2.default-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
+			.run(context -> {
+				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT);
+				});
+			});
+	}
+	
+	@Test
+	public void sdkHttpClientBuilderDefaultConfigurationOverride() {
+		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
+			.withPropertyValues("aws2.default.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
+			.withPropertyValues("aws2.default-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
+			.withPropertyValues("aws2.ec2-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilderForEc2")
+			.run(context -> {
+				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT2);
+				});
+				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
 						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT);
@@ -241,7 +341,9 @@ public class AwsV2ConfigurationTest {
 	
 	
 	@Test
-	public void asyncConfigurationOverride() {
+	public void asyncConfiguration() {
+		String defaultRegion = "eu-west-2";
+		String defaultAsyncRegion = "eu-west-3";
 		String sqsRegion = "sa-east-1";
 		String sqsEndpoint = "http://localhost:60002";
 		String snsRegion = "ca-central-1";
@@ -249,6 +351,8 @@ public class AwsV2ConfigurationTest {
 		String snsAsyncRegion = "ap-south-1";
 		String snsAsyncEndpoint = "http://localhost:60004";
 		this.contextRunner.withUserConfiguration(ExampleSqsSnsSyncAsyncConfiguration.class)
+			.withPropertyValues("aws2.default.region=" + defaultRegion)
+			.withPropertyValues("aws2.default-async.region=" + defaultAsyncRegion)
 			.withPropertyValues("aws2.sqs.region=" + sqsRegion)
 			.withPropertyValues("aws2.sqs.endpoint=" + sqsEndpoint)
 			.withPropertyValues("aws2.sns.region=" + snsRegion)
@@ -258,7 +362,7 @@ public class AwsV2ConfigurationTest {
 			.run(context -> {
 				assertThat(context.getBean(SqsClient.class.getName()))
 					.satisfies(client -> {
-						// use aws.sqs.*
+						// use aws.sqs.* (present)
 						SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 						assertThat(clientConfiguration.option(AwsClientOption.AWS_REGION))
 							.isEqualTo(Region.of(sqsRegion));
@@ -267,16 +371,16 @@ public class AwsV2ConfigurationTest {
 					});
 				assertThat(context.getBean(SqsAsyncClient.class))
 					.satisfies(client -> {
-						// use aws.sqs.*
+						// use aws.sqs-async.* (present) -> aws.default-async.*
 						SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 						assertThat(clientConfiguration.option(AwsClientOption.AWS_REGION))
-							.isEqualTo(Region.of(sqsRegion));
+							.isEqualTo(Region.of(defaultAsyncRegion));
 						assertThat(clientConfiguration.option(SdkClientOption.ENDPOINT))
-							.isEqualTo(URI.create(sqsEndpoint));
+							.isEqualTo(URI.create("https://sqs." + defaultAsyncRegion + ".amazonaws.com"));
 					});
 				assertThat(context.getBean(SnsClient.class.getName()))
 					.satisfies(client -> {
-						// use aws.sns.*
+						// use aws.sns.* (present)
 						SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 						assertThat(clientConfiguration.option(AwsClientOption.AWS_REGION))
 							.isEqualTo(Region.of(snsRegion));
@@ -285,7 +389,7 @@ public class AwsV2ConfigurationTest {
 					});
 				assertThat(context.getBean(SnsAsyncClient.class))
 					.satisfies(client -> {
-						// use aws.sns-async.*
+						// use aws.sns-async.* (present)
 						SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 						assertThat(clientConfiguration.option(AwsClientOption.AWS_REGION))
 							.isEqualTo(Region.of(snsAsyncRegion));

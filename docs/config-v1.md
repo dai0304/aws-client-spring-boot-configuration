@@ -87,9 +87,11 @@ static class ExampleClientConfiguration {
 ```
 
 
-### How to make individual settings with sync client and async client?
+### How to configure async client?
 
 Set `aws1.<service-name>-async.*` as the property of Spring Boot.
+
+`aws1.<service-name>.*` does not affect to async client configuration.
 
 #### Configuration example for SQS sync / async clients
 
@@ -105,6 +107,9 @@ and the socket timeout for `AmazonSQSAsync` is a second.
 
 Set `aws1.default.*` as the property of Spring Boot.
 However, if you set individual settings for **service-name**, that setting takes precedence.
+
+`aws1.default.*` does not affect to async client configuration.
+You can use `aws1.default-async.*` for common configuration of async client.
 
 #### Configuration example for all and SQS
 
