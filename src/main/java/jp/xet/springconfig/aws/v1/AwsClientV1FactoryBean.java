@@ -18,6 +18,7 @@ package jp.xet.springconfig.aws.v1;
 import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeMethod;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.build;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureClientConfiguration;
+import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureCredentialsProvider;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureEndpointConfiguration;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureRegion;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.createBuilder;
@@ -31,8 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
+import com.amazonaws.auth.AWSCredentialsProvider;
 
 import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsClientV1Properties;
 import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsS3ClientV1Properties;
@@ -47,8 +47,6 @@ import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsS3ClientV1Properti
 @RequiredArgsConstructor
 class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 	
-	private static final String DEFAULT_NAME = "default";
-	
 	private static final String S3_BUILDER = "com.amazonaws.services.s3.AmazonS3Builder";
 	
 	private static final String ENCRYPTION_CLIENT_BUILDER = "com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder";
@@ -57,7 +55,7 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 			"com.amazonaws.services.s3.model.EncryptionMaterialsProvider";
 	
 	
-	private static Optional<AwsClientV1Properties> getAwsClientProperties(
+	private static AwsClientV1Properties getAwsClientProperties(
 			Map<String, AwsClientV1Properties> map, Class<?> clientClass) {
 		try {
 			String servicePackageName = clientClass.getPackage().getName()
@@ -65,11 +63,7 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 				.replace('.', '-');
 			String serviceNameSuffix = clientClass.getName().endsWith("Async") ? "-async" : "";
 			
-			AwsClientV1Properties asyncProperties = map.get(servicePackageName + serviceNameSuffix);
-			if (asyncProperties != null) {
-				return Optional.of(asyncProperties);
-			}
-			return Optional.ofNullable(map.get(DEFAULT_NAME + serviceNameSuffix));
+			return map.get(servicePackageName + serviceNameSuffix);
 		} catch (IndexOutOfBoundsException e) {
 			log.error("Failed to get property name: {}", clientClass);
 			throw e;
@@ -99,24 +93,31 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 	}
 	
 	private void configureBuilder(Object builder) {
-		Optional<AwsClientV1Properties> specificConfig = getAwsClientProperties(awsClientV1PropertiesMap, clientClass);
-		Optional<AwsClientV1Properties> defaultConfig = Optional.ofNullable(awsClientV1PropertiesMap.get(DEFAULT_NAME));
-		
-		ClientConfiguration clientConfiguration = specificConfig.map(AwsClientV1Properties::getClient)
-			.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getClient).orElse(null));
-		configureClientConfiguration(builder, clientConfiguration);
-		
-		EndpointConfiguration endpointConfiguration = specificConfig.map(AwsClientV1Properties::getEndpoint)
-			.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getEndpoint).orElse(null));
-		configureEndpointConfiguration(builder, endpointConfiguration);
-		if (endpointConfiguration == null) {
-			String region = specificConfig.map(AwsClientV1Properties::getRegion)
-				.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getRegion).orElse(null));
-			configureRegion(builder, region);
+		BeanFactory beanFactory = getBeanFactory();
+		if (beanFactory == null) {
+			return;
 		}
 		
 		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {
 			configureAmazonS3ClientBuilder(builder);
+		}
+		
+		AwsClientV1Properties config = getAwsClientProperties(awsClientV1PropertiesMap, clientClass);
+		if (config == null) {
+			return;
+		}
+		
+		Optional.ofNullable(config.getCredentialsProviderBeanName())
+			.ifPresent(credentialsProviderBeanName -> {
+				AWSCredentialsProvider credentialsProvider =
+						beanFactory.getBean(credentialsProviderBeanName, AWSCredentialsProvider.class);
+				configureCredentialsProvider(builder, credentialsProvider);
+			});
+		
+		configureClientConfiguration(builder, config.getClient());
+		configureEndpointConfiguration(builder, config.getEndpoint());
+		if (config.getEndpoint() == null) {
+			configureRegion(builder, config.getRegion());
 		}
 	}
 	
