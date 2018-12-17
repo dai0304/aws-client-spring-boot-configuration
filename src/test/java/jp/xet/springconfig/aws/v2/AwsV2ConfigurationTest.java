@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.Serializable;
 import java.net.URI;
 
 import lombok.extern.slf4j.Slf4j;
@@ -86,6 +87,20 @@ public class AwsV2ConfigurationTest {
 	@After
 	public void tearDown() throws Exception {
 		System.clearProperty("aws.region");
+	}
+	
+	
+	@Configuration
+	@EnableAwsClientV2(Serializable.class)
+	@EnableConfigurationProperties
+	static class ExampleInvalidConfiguration {
+	}
+	
+	
+	@Test
+	public void invalidClientConfig() {
+		contextRunner.withUserConfiguration(ExampleInvalidConfiguration.class)
+			.run(context -> assertThat(context).hasFailed());
 	}
 	
 	

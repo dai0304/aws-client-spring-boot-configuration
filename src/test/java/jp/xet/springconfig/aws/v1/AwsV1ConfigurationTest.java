@@ -18,6 +18,7 @@ package jp.xet.springconfig.aws.v1; // NOPMD CouplingBetweenObjects
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.security.SecureRandom;
 import java.util.Locale;
@@ -87,6 +88,20 @@ public class AwsV1ConfigurationTest {
 	public void tearDown() throws Exception {
 		System.clearProperty("aws.region");
 		System.clearProperty("http.nonProxyHosts");
+	}
+	
+	
+	@Configuration
+	@EnableAwsClientV1(Serializable.class)
+	@EnableConfigurationProperties
+	static class ExampleInvalidConfiguration {
+	}
+	
+	
+	@Test
+	public void invalidClientConfig() {
+		contextRunner.withUserConfiguration(ExampleInvalidConfiguration.class)
+			.run(context -> assertThat(context).hasFailed());
 	}
 	
 	
