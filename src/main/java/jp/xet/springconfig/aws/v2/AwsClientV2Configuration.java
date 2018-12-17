@@ -84,8 +84,8 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 class AwsClientV2Configuration {
 	
 	@Bean
-	public static AwsClientPropertiesMap awsClientV2PropertiesMap() {
-		return new AwsClientPropertiesMap();
+	public static AwsClientV2PropertiesMap awsClientV2PropertiesMap() {
+		return new AwsClientV2PropertiesMap();
 	}
 	
 	@Bean
@@ -96,7 +96,7 @@ class AwsClientV2Configuration {
 	
 	@SuppressWarnings("serial")
 	@ConfigurationProperties(value = "aws2", ignoreInvalidFields = true)
-	private static class AwsClientPropertiesMap extends HashMap<String, AwsClientV2Properties> {
+	private static class AwsClientV2PropertiesMap extends HashMap<String, AwsClientV2Properties> {
 	}
 	
 	@Data

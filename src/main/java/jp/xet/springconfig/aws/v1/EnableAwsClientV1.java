@@ -34,6 +34,9 @@ import org.springframework.context.annotation.Import;
  *
  *     // various &#064;Bean definitions
  * }</pre>
+ *
+ * @author miyamoto.daisuke
+ * @since #version#
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

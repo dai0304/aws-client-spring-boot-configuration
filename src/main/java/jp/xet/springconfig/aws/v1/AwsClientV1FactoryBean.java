@@ -16,6 +16,11 @@
 package jp.xet.springconfig.aws.v1;
 
 import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeMethod;
+import static jp.xet.springconfig.aws.v1.AwsClientV1Util.build;
+import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureClientConfiguration;
+import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureEndpointConfiguration;
+import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureRegion;
+import static jp.xet.springconfig.aws.v1.AwsClientV1Util.createBuilder;
 
 import java.util.Map;
 import java.util.Optional;
@@ -33,9 +38,9 @@ import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsClientV1Properties
 import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsS3ClientV1Properties;
 
 /**
- * Spring configuration class to configure AWS client builders.
+ * Spring factory bean class of AWS client v1.
  *
- * @param <T> type of AWS client
+ * @param <T> type of AWS client v1
  * @author miyamoto.daisuke
  */
 @Slf4j
@@ -53,25 +58,18 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	
 	private static Optional<AwsClientV1Properties> getAwsClientProperties(
-			Map<String, AwsClientV1Properties> stringAwsClientPropertiesMap, Class<?> clientClass) {
+			Map<String, AwsClientV1Properties> map, Class<?> clientClass) {
 		try {
 			String servicePackageName = clientClass.getPackage().getName()
 				.substring("com.amazonaws.services.".length())
 				.replace('.', '-');
+			String serviceNameSuffix = clientClass.getName().endsWith("Async") ? "-async" : "";
 			
-			if (clientClass.getName().endsWith("Async")) {
-				AwsClientV1Properties asyncProperties = stringAwsClientPropertiesMap.get(servicePackageName + "-async");
-				if (asyncProperties != null) {
-					return Optional.of(asyncProperties);
-				}
-				return Optional.ofNullable(stringAwsClientPropertiesMap.get(DEFAULT_NAME + "-async"));
-			} else {
-				AwsClientV1Properties serviceProperties = stringAwsClientPropertiesMap.get(servicePackageName);
-				if (serviceProperties != null) {
-					return Optional.of(serviceProperties);
-				}
-				return Optional.ofNullable(stringAwsClientPropertiesMap.get(DEFAULT_NAME));
+			AwsClientV1Properties asyncProperties = map.get(servicePackageName + serviceNameSuffix);
+			if (asyncProperties != null) {
+				return Optional.of(asyncProperties);
 			}
+			return Optional.ofNullable(map.get(DEFAULT_NAME + serviceNameSuffix));
 		} catch (IndexOutOfBoundsException e) {
 			log.error("Failed to get property name: {}", clientClass);
 			throw e;
@@ -95,9 +93,9 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	@Override
 	protected T createInstance() throws Exception {
-		Object builder = AwsClientV1Util.createBuilder(builderClass);
+		Object builder = createBuilder(builderClass);
 		configureBuilder(builder);
-		return AwsClientV1Util.buildClient(builder);
+		return build(builder);
 	}
 	
 	private void configureBuilder(Object builder) {
@@ -106,18 +104,15 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 		
 		ClientConfiguration clientConfiguration = specificConfig.map(AwsClientV1Properties::getClient)
 			.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getClient).orElse(null));
-		AwsClientV1Util.configureClientConfiguration(builder, clientConfiguration);
+		configureClientConfiguration(builder, clientConfiguration);
 		
 		EndpointConfiguration endpointConfiguration = specificConfig.map(AwsClientV1Properties::getEndpoint)
 			.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getEndpoint).orElse(null));
-		if (endpointConfiguration != null) {
-			AwsClientV1Util.configureEndpointConfiguration(builder, endpointConfiguration);
-		} else {
+		configureEndpointConfiguration(builder, endpointConfiguration);
+		if (endpointConfiguration == null) {
 			String region = specificConfig.map(AwsClientV1Properties::getRegion)
 				.orElseGet(() -> defaultConfig.map(AwsClientV1Properties::getRegion).orElse(null));
-			if (region != null) {
-				AwsClientV1Util.configureRegion(builder, region);
-			}
+			configureRegion(builder, region);
 		}
 		
 		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {

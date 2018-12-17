@@ -76,7 +76,7 @@ class AwsClientV1Util {
 	 * @return AWS client
 	 * @see com.amazonaws.client.builder.AwsClientBuilder#build() 
 	 */
-	static <T> T buildClient(Object builder) {
+	static <T> T build(Object builder) {
 		return invokeMethod(builder, "build");
 	}
 }

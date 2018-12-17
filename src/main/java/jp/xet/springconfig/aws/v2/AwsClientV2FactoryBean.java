@@ -49,9 +49,9 @@ import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 
 /**
- * Spring configuration class to configure AWS client builders.
+ * Spring factory bean class of AWS client v2.
  *
- * @param <T> type of AWS client
+ * @param <T> type of AWS client v2
  * @author miyamoto.daisuke
  */
 @Slf4j

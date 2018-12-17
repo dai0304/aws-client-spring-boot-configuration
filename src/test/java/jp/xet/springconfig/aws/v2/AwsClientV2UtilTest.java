@@ -30,13 +30,23 @@ import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
 import software.amazon.awssdk.core.client.config.SdkClientOption;
 import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.ec2.Ec2AsyncClient;
+import software.amazon.awssdk.services.ec2.Ec2AsyncClientBuilder;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.Ec2ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 
+/**
+ * Test for {@link AwsClientV2Util}.
+ *
+ * @author miyamoto.daisuke
+ * @since #version#
+ */
 public class AwsClientV2UtilTest {
 	
 	@Test
@@ -66,8 +76,49 @@ public class AwsClientV2UtilTest {
 			assertThat(clientConfig.option(SdkClientOption.CRC32_FROM_COMPRESSED_DATA_ENABLED)).isFalse();
 			assertThat(clientConfig.option(SdkClientOption.SCHEDULED_EXECUTOR_SERVICE)).isNotNull();
 			assertThat(clientConfig.option(SdkClientOption.ASYNC_HTTP_CLIENT)).isNull();
-			assertThat(clientConfig.option(SdkClientOption.SYNC_HTTP_CLIENT)).isNotNull();
+			assertThat(clientConfig.option(SdkClientOption.SYNC_HTTP_CLIENT)).isInstanceOf(ApacheHttpClient.class);
 			assertThat(clientConfig.option(SdkClientOption.CLIENT_TYPE)).isEqualTo(ClientType.SYNC);
+			assertThat(clientConfig.option(SdkClientOption.API_CALL_ATTEMPT_TIMEOUT)).isNull();
+			assertThat(clientConfig.option(SdkClientOption.API_CALL_TIMEOUT)).isNull();
+			assertThat(clientConfig.option(SdkClientOption.SERVICE_NAME)).isEqualTo("Ec2");
+			
+			assertThat(clientConfig.option(SdkAdvancedClientOption.USER_AGENT_PREFIX)).startsWith("aws-sdk-java/2.");
+			assertThat(clientConfig.option(SdkAdvancedClientOption.USER_AGENT_SUFFIX)).isEmpty();
+			assertThat(clientConfig.option(SdkAdvancedClientOption.SIGNER)).isNotNull();
+			assertThat(clientConfig.option(SdkAdvancedClientOption.DISABLE_HOST_PREFIX_INJECTION)).isFalse();
+		});
+	}
+	
+	@Test
+	public void testBuildEc2AsyncClient() {
+		// exercise
+		Object builder = AwsClientV2Util.createBuilder(Ec2AsyncClient.class);
+		AwsClientV2Util.configureRegion(builder, "ap-northeast-2");
+		Object actual = AwsClientV2Util.build(builder);
+		// verify
+		assertThat(builder).isInstanceOf(Ec2AsyncClientBuilder.class);
+		assertThat(actual).isInstanceOfSatisfying(Ec2AsyncClient.class, client -> {
+			SdkClientConfiguration clientConfig = TestUtil.extractClientConfig(client);
+			
+			assertThat(clientConfig.option(AwsClientOption.AWS_REGION)).isEqualTo(Region.of("ap-northeast-2"));
+			assertThat(clientConfig.option(AwsClientOption.SIGNING_REGION)).isEqualTo(Region.of("ap-northeast-2"));
+			assertThat(clientConfig.option(AwsClientOption.CREDENTIALS_PROVIDER))
+				.isInstanceOf(DefaultCredentialsProvider.class);
+			assertThat(clientConfig.option(AwsClientOption.SERVICE_SIGNING_NAME)).isEqualTo("ec2");
+			
+			assertThat(clientConfig.option(SdkClientOption.ADDITIONAL_HTTP_HEADERS)).isEmpty();
+			assertThat(clientConfig.option(SdkClientOption.RETRY_POLICY))
+				.satisfies(policy -> assertThat(policy).returns(3, RetryPolicy::numRetries));
+			assertThat(clientConfig.option(SdkClientOption.EXECUTION_INTERCEPTORS)).isNotNull();
+			assertThat(clientConfig.option(SdkClientOption.ENDPOINT))
+				.isEqualTo(URI.create("https://ec2.ap-northeast-2.amazonaws.com"));
+			assertThat(clientConfig.option(SdkClientOption.SERVICE_CONFIGURATION)).isNull();
+			assertThat(clientConfig.option(SdkClientOption.CRC32_FROM_COMPRESSED_DATA_ENABLED)).isFalse();
+			assertThat(clientConfig.option(SdkClientOption.SCHEDULED_EXECUTOR_SERVICE)).isNotNull();
+			assertThat(clientConfig.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+				.isInstanceOf(NettyNioAsyncHttpClient.class);
+			assertThat(clientConfig.option(SdkClientOption.SYNC_HTTP_CLIENT)).isNull();
+			assertThat(clientConfig.option(SdkClientOption.CLIENT_TYPE)).isEqualTo(ClientType.ASYNC);
 			assertThat(clientConfig.option(SdkClientOption.API_CALL_ATTEMPT_TIMEOUT)).isNull();
 			assertThat(clientConfig.option(SdkClientOption.API_CALL_TIMEOUT)).isNull();
 			assertThat(clientConfig.option(SdkClientOption.SERVICE_NAME)).isEqualTo("Ec2");
@@ -115,7 +166,7 @@ public class AwsClientV2UtilTest {
 			assertThat(clientConfig.option(SdkClientOption.CRC32_FROM_COMPRESSED_DATA_ENABLED)).isFalse();
 			assertThat(clientConfig.option(SdkClientOption.SCHEDULED_EXECUTOR_SERVICE)).isNotNull();
 			assertThat(clientConfig.option(SdkClientOption.ASYNC_HTTP_CLIENT)).isNull();
-			assertThat(clientConfig.option(SdkClientOption.SYNC_HTTP_CLIENT)).isNotNull();
+			assertThat(clientConfig.option(SdkClientOption.SYNC_HTTP_CLIENT)).isInstanceOf(ApacheHttpClient.class);
 			assertThat(clientConfig.option(SdkClientOption.CLIENT_TYPE)).isEqualTo(ClientType.SYNC);
 			assertThat(clientConfig.option(SdkClientOption.API_CALL_ATTEMPT_TIMEOUT)).isNull();
 			assertThat(clientConfig.option(SdkClientOption.API_CALL_TIMEOUT)).isNull();
@@ -129,7 +180,7 @@ public class AwsClientV2UtilTest {
 	}
 	
 	@Test
-	public void testBuildS3Client() {
+	public void testBuildS3Client_Configured() {
 		// exercise
 		Object builder = AwsClientV2Util.createBuilder(S3Client.class);
 		AwsClientV2Util.configureRegion(builder, "ap-northeast-2");
@@ -168,7 +219,7 @@ public class AwsClientV2UtilTest {
 			assertThat(clientConfig.option(SdkClientOption.CRC32_FROM_COMPRESSED_DATA_ENABLED)).isFalse();
 			assertThat(clientConfig.option(SdkClientOption.SCHEDULED_EXECUTOR_SERVICE)).isNotNull();
 			assertThat(clientConfig.option(SdkClientOption.ASYNC_HTTP_CLIENT)).isNull();
-			assertThat(clientConfig.option(SdkClientOption.SYNC_HTTP_CLIENT)).isNotNull();
+			assertThat(clientConfig.option(SdkClientOption.SYNC_HTTP_CLIENT)).isInstanceOf(ApacheHttpClient.class);
 			assertThat(clientConfig.option(SdkClientOption.CLIENT_TYPE)).isEqualTo(ClientType.SYNC);
 			assertThat(clientConfig.option(SdkClientOption.API_CALL_ATTEMPT_TIMEOUT)).isEqualTo(Duration.ofSeconds(2));
 			assertThat(clientConfig.option(SdkClientOption.API_CALL_TIMEOUT)).isNull();
