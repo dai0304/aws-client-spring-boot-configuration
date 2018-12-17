@@ -45,8 +45,13 @@ import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.ServiceConfiguration;
 import software.amazon.awssdk.core.client.builder.SdkAsyncClientBuilder;
 import software.amazon.awssdk.core.client.builder.SdkSyncClientBuilder;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.apache.ProxyConfiguration;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
 
 /**
  * Spring factory bean class of AWS client v2.
@@ -116,17 +121,91 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 		AwsClientV2Properties specificConfig = getAwsClientProperties(awsClientV2PropertiesMap, clientClass);
 		AwsClientV2Properties defaultConfig = awsClientV2PropertiesMap.get(DEFAULT_NAME);
 		
-		getValue(specificConfig, defaultConfig, AwsClientV2Properties::getClient)
-			.ifPresent(clientConfiguration -> configureClientOverrideConfiguration(builder, clientConfiguration));
-		
 		getValue(specificConfig, defaultConfig, AwsClientV2Properties::getEndpoint)
 			.ifPresent(endpoint -> configureEndpoint(builder, endpoint));
 		
 		getValue(specificConfig, defaultConfig, AwsClientV2Properties::getRegion)
 			.ifPresent(region -> configureRegion(builder, region));
 		
+		if (builder instanceof SdkSyncClientBuilder) {
+			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getApacheHttpClientBuilder)
+				.map(sdkClientConfig -> {
+					ApacheHttpClient.Builder apacheHttpClientBuilder = ApacheHttpClient.builder()
+						.socketTimeout(sdkClientConfig.getSocketTimeout())
+						.connectionTimeout(sdkClientConfig.getConnectionTimeout())
+						.maxConnections(sdkClientConfig.getMaxConnections())
+						.expectContinueEnabled(sdkClientConfig.getExpectContinueEnabled())
+						.connectionTimeToLive(sdkClientConfig.getConnectionTimeToLive())
+						.connectionMaxIdleTime(sdkClientConfig.getConnectionMaxIdleTime())
+						.useIdleConnectionReaper(sdkClientConfig.getUseIdleConnectionReaper());
+					Optional.ofNullable(sdkClientConfig.getConnectionAcquisitionTimeout())
+						.ifPresent(apacheHttpClientBuilder::connectionAcquisitionTimeout);
+					if (sdkClientConfig.getProxyConfiguration() != null) {
+						apacheHttpClientBuilder.proxyConfiguration(ProxyConfiguration.builder()
+							.endpoint(sdkClientConfig.getProxyConfiguration().getEndpoint())
+							.username(sdkClientConfig.getProxyConfiguration().getUsername())
+							.password(sdkClientConfig.getProxyConfiguration().getPassword())
+							.ntlmDomain(sdkClientConfig.getProxyConfiguration().getNtlmDomain())
+							.ntlmWorkstation(sdkClientConfig.getProxyConfiguration().getNtlmWorkstation())
+							.preemptiveBasicAuthenticationEnabled(
+									sdkClientConfig.getProxyConfiguration().getPreemptiveBasicAuthenticationEnabled())
+							.useSystemPropertyValues(
+									sdkClientConfig.getProxyConfiguration().getUseSystemPropertyValues())
+							.build());
+					}
+					return apacheHttpClientBuilder;
+				})
+				.ifPresent(sdkHttpClientBuilder -> configureHttpSyncClientBuilder(builder, sdkHttpClientBuilder));
+		}
+		
 		BeanFactory beanFactory = getBeanFactory();
+		if (builder instanceof SdkAsyncClientBuilder) {
+			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getNettyNioAsyncHttpClientBuilder)
+				.map(sdkClientConfig -> {
+					NettyNioAsyncHttpClient.Builder nettyNioAsyncHttpClientBuilder = NettyNioAsyncHttpClient.builder()
+						.maxConcurrency(sdkClientConfig.getMaxConcurrency())
+						.maxPendingConnectionAcquires(sdkClientConfig.getMaxPendingConnectionAcquires());
+					Optional.ofNullable(sdkClientConfig.getReadTimeout())
+						.ifPresent(nettyNioAsyncHttpClientBuilder::readTimeout);
+					Optional.ofNullable(sdkClientConfig.getWriteTimeout())
+						.ifPresent(nettyNioAsyncHttpClientBuilder::writeTimeout);
+					Optional.ofNullable(sdkClientConfig.getConnectionAcquisitionTimeout())
+						.ifPresent(nettyNioAsyncHttpClientBuilder::connectionAcquisitionTimeout);
+					nettyNioAsyncHttpClientBuilder.connectionTimeout(sdkClientConfig.getConnectionTimeout())
+						.protocol(sdkClientConfig.getProtocol())
+						.maxHttp2Streams(sdkClientConfig.getMaxHttp2Streams());
+					if (beanFactory != null) {
+						if (sdkClientConfig.getEventLoopGroupBeanName() != null) {
+							SdkEventLoopGroup eventLoopGroup = beanFactory.getBean(
+									sdkClientConfig.getEventLoopGroupBeanName(), SdkEventLoopGroup.class);
+							nettyNioAsyncHttpClientBuilder.eventLoopGroup(eventLoopGroup);
+						}
+						if (sdkClientConfig.getEventLoopGroupBuilderBeanName() != null) {
+							SdkEventLoopGroup.Builder eventLoopGroupBuilder = beanFactory.getBean(
+									sdkClientConfig.getEventLoopGroupBeanName(), SdkEventLoopGroup.Builder.class);
+							nettyNioAsyncHttpClientBuilder.eventLoopGroupBuilder(eventLoopGroupBuilder);
+						}
+					}
+					return nettyNioAsyncHttpClientBuilder;
+				})
+				.ifPresent(sdkHttpClientBuilder -> configureHttpAsyncClientBuilder(builder, sdkHttpClientBuilder));
+		}
+		
 		if (beanFactory != null) {
+			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getCredentialsProviderBeanName)
+				.ifPresent(credentialsProviderBeanName -> {
+					AwsCredentialsProvider credentialsProvider =
+							beanFactory.getBean(credentialsProviderBeanName, AwsCredentialsProvider.class);
+					configureCredentialsProvider(builder, credentialsProvider);
+				});
+			
+			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getClientOverrideConfigurationBeanName)
+				.ifPresent(clientOverrideConfigurationBeanName -> {
+					ClientOverrideConfiguration clientOverrideConfiguration =
+							beanFactory.getBean(clientOverrideConfigurationBeanName, ClientOverrideConfiguration.class);
+					configureClientOverrideConfiguration(builder, clientOverrideConfiguration);
+				});
+			
 			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getHttpClientBuilderBeanName)
 				.ifPresent(httpClientBuilderBeanName -> {
 					if (builder instanceof SdkSyncClientBuilder) {
@@ -145,13 +224,6 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 				.ifPresent(httpClientBeanName -> {
 					SdkHttpClient sdkHttpClient = beanFactory.getBean(httpClientBeanName, SdkHttpClient.class);
 					configureHttpClient(builder, sdkHttpClient);
-				});
-			
-			getValue(specificConfig, defaultConfig, AwsClientV2Properties::getCredentialsProviderBeanName)
-				.ifPresent(credentialsProviderBeanName -> {
-					AwsCredentialsProvider credentialsProvider =
-							beanFactory.getBean(credentialsProviderBeanName, AwsCredentialsProvider.class);
-					configureCredentialsProvider(builder, credentialsProvider);
 				});
 		}
 		

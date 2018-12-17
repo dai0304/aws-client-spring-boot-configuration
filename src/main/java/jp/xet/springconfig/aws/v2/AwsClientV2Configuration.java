@@ -15,8 +15,11 @@
  */
 package jp.xet.springconfig.aws.v2;
 
+import java.net.InetAddress;
 import java.net.URI;
-import java.util.HashMap;
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 import lombok.Data;
 
@@ -24,7 +27,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.http.Protocol;
 
 /**
  * Spring configuration for AWS Clients.
@@ -96,13 +99,11 @@ class AwsClientV2Configuration {
 	
 	@SuppressWarnings("serial")
 	@ConfigurationProperties(value = "aws2", ignoreInvalidFields = true)
-	private static class AwsClientV2PropertiesMap extends HashMap<String, AwsClientV2Properties> {
+	private static class AwsClientV2PropertiesMap extends LinkedHashMap<String, AwsClientV2Properties> {
 	}
 	
 	@Data
 	static class AwsClientV2Properties {
-		
-		private ClientOverrideConfiguration client;
 		
 		private String region;
 		
@@ -110,9 +111,84 @@ class AwsClientV2Configuration {
 		
 		private String credentialsProviderBeanName;
 		
+		private String clientOverrideConfigurationBeanName;
+		
 		private String httpClientBeanName;
 		
 		private String httpClientBuilderBeanName;
+		
+		private ApacheHttpClientBuilder apacheHttpClientBuilder;
+		
+		private NettyNioAsyncHttpClientBuilder nettyNioAsyncHttpClientBuilder;
+	}
+	
+	@Data
+	static class ApacheHttpClientBuilder {
+		
+		private Duration socketTimeout;
+		
+		private Duration connectionTimeout;
+		
+		private Duration connectionAcquisitionTimeout;
+		
+		private Integer maxConnections;
+		
+		private ProxyConfiguration proxyConfiguration;
+		
+		private InetAddress localAddress;
+		
+		private Boolean expectContinueEnabled;
+		
+		private Duration connectionTimeToLive;
+		
+		private Duration connectionMaxIdleTime;
+		
+		private Boolean useIdleConnectionReaper;
+	}
+	
+	@Data
+	static class ProxyConfiguration {
+		
+		private URI endpoint;
+		
+		private String username;
+		
+		private String password;
+		
+		private String ntlmDomain;
+		
+		private String ntlmWorkstation;
+		
+		private Set<String> nonProxyHosts;
+		
+		private Boolean preemptiveBasicAuthenticationEnabled;
+		
+		private Boolean useSystemPropertyValues;
+		
+	}
+	
+	@Data
+	static class NettyNioAsyncHttpClientBuilder {
+		
+		private Integer maxConcurrency;
+		
+		private Integer maxPendingConnectionAcquires;
+		
+		private Duration readTimeout;
+		
+		private Duration writeTimeout;
+		
+		private Duration connectionTimeout;
+		
+		private Duration connectionAcquisitionTimeout;
+		
+		private String eventLoopGroupBeanName;
+		
+		private String eventLoopGroupBuilderBeanName;
+		
+		private Protocol protocol;
+		
+		private Integer maxHttp2Streams;
 	}
 	
 	@Data

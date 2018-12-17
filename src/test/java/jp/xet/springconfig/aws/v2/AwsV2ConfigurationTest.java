@@ -66,7 +66,7 @@ public class AwsV2ConfigurationTest {
 	
 	private static final SdkAsyncHttpClient MOCK_SDK_ASYNC_HTTP_CLIENT = mock(SdkAsyncHttpClient.class);
 	
-	private static final SdkAsyncHttpClient MOCK_SDK_ASYNC_HTTP_CLIENT2 = mock(SdkAsyncHttpClient.class);
+	private static final SdkAsyncHttpClient MOCK_SDK_ASYNC_HTTP_CLIENT_FOR_EC2 = mock(SdkAsyncHttpClient.class);
 	
 	private static final SdkHttpClient MOCK_SDK_HTTP_CLIENT = mock(SdkHttpClient.class);
 	
@@ -234,7 +234,7 @@ public class AwsV2ConfigurationTest {
 		@Bean
 		public SdkAsyncHttpClient.Builder<?> exampleSdkAsyncHttpClientBuilderForEc2() {
 			SdkAsyncHttpClient.Builder<?> builder = mock(SdkAsyncHttpClient.Builder.class);
-			when(builder.buildWithDefaults(any())).thenReturn(MOCK_SDK_ASYNC_HTTP_CLIENT2);
+			when(builder.buildWithDefaults(any())).thenReturn(MOCK_SDK_ASYNC_HTTP_CLIENT_FOR_EC2);
 			return builder;
 		}
 	}
@@ -312,7 +312,7 @@ public class AwsV2ConfigurationTest {
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT2);
+						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT_FOR_EC2);
 				});
 				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
