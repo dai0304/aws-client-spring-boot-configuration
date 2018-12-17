@@ -18,17 +18,21 @@ package jp.xet.springconfig.aws.v1;
 import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeMethod;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.build;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureClientConfiguration;
+import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureCredentialsProvider;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureEndpointConfiguration;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureRegion;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.createBuilder;
 
 import java.util.Map;
+import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
+
+import com.amazonaws.auth.AWSCredentialsProvider;
 
 import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsClientV1Properties;
 import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsS3ClientV1Properties;
@@ -89,6 +93,11 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 	}
 	
 	private void configureBuilder(Object builder) {
+		BeanFactory beanFactory = getBeanFactory();
+		if (beanFactory == null) {
+			return;
+		}
+		
 		if (builderClass.getName().startsWith("com.amazonaws.services.s3.")) {
 			configureAmazonS3ClientBuilder(builder);
 		}
@@ -97,6 +106,13 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 		if (config == null) {
 			return;
 		}
+		
+		Optional.ofNullable(config.getCredentialsProviderBeanName())
+			.ifPresent(credentialsProviderBeanName -> {
+				AWSCredentialsProvider credentialsProvider =
+						beanFactory.getBean(credentialsProviderBeanName, AWSCredentialsProvider.class);
+				configureCredentialsProvider(builder, credentialsProvider);
+			});
 		
 		configureClientConfiguration(builder, config.getClient());
 		configureEndpointConfiguration(builder, config.getEndpoint());

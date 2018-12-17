@@ -103,16 +103,17 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 	}
 	
 	private void configureBuilder(Object builder) {
+		BeanFactory beanFactory = getBeanFactory();
+		if (beanFactory == null) {
+			return;
+		}
+		
 		if (clientClass.getName().equals(S3_CLIENT)) {
 			configureAmazonS3ClientBuilder(builder);
 		}
 		
 		AwsClientV2Properties config = getAwsClientProperties(awsClientV2PropertiesMap, clientClass);
 		if (config == null) {
-			return;
-		}
-		BeanFactory beanFactory = getBeanFactory();
-		if (beanFactory == null) {
 			return;
 		}
 		

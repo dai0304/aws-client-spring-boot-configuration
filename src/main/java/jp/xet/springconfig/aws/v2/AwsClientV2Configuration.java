@@ -48,24 +48,6 @@ import software.amazon.awssdk.http.Protocol;
  *         or {@link software.amazon.awssdk.http.async.SdkAsyncHttpClient.Builder} (string)</li>
  * </ul>
  * 
- * <h3>Default client configurations.</h3>
- * 
- * <ul>
- *     <li>{@code aws2.default[-async].endpoint} - The service endpoint either with
- *         or without the protocol (e.g. https://sns.us-west-1.amazonaws.com or sns.us-west-1.amazonaws.com) (string)</li>
- *     <li>{@code aws2.default[-async].region} - the region to be used by the client.
- *         This will be used to determine both the service endpoint (eg: https://sns.us-west-1.amazonaws.com)
- *         and signing region (eg: us-west-1) for requests. (string)</li>
- *     <li>{@code aws2.default[-async].credentials-provider-bean-name} - The spring bean name of
- *         {@link software.amazon.awssdk.auth.credentials.AwsCredentialsProvider} (string)</li>
- *     <li>{@code aws2.default[-async].http-client-bean-name} - The spring bean name of
- *         {@link software.amazon.awssdk.http.SdkHttpClient}
- *         or {@link software.amazon.awssdk.http.async.SdkAsyncHttpClient} (string)</li>
- *     <li>{@code aws2.default[-async].http-client-builder-bean-name} - The spring bean name of
- *         {@link software.amazon.awssdk.http.SdkHttpClient.Builder}
- *         or {@link software.amazon.awssdk.http.async.SdkAsyncHttpClient.Builder} (string)</li>
- * </ul>
- * 
  * <h3>S3 client specific configurations.</h3>
  * 
  * <ul>
