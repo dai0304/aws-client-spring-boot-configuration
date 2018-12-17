@@ -38,7 +38,9 @@ import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
 import software.amazon.awssdk.core.client.config.SdkClientOption;
 import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2AsyncClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
@@ -63,6 +65,8 @@ public class AwsV2ConfigurationTest {
 	private static final AwsCredentialsProvider MOCK_CREDENTIALS_PROVIDER = mock(AwsCredentialsProvider.class);
 	
 	private static final SdkAsyncHttpClient MOCK_SDK_ASYNC_HTTP_CLIENT = mock(SdkAsyncHttpClient.class);
+	
+	private static final SdkAsyncHttpClient MOCK_SDK_ASYNC_HTTP_CLIENT2 = mock(SdkAsyncHttpClient.class);
 	
 	private static final SdkHttpClient MOCK_SDK_HTTP_CLIENT = mock(SdkHttpClient.class);
 	
@@ -206,7 +210,9 @@ public class AwsV2ConfigurationTest {
 	@Configuration
 	@EnableAwsClientV2({
 		Ec2Client.class,
-		Ec2AsyncClient.class
+		Ec2AsyncClient.class,
+		SqsClient.class,
+		SqsAsyncClient.class
 	})
 	@EnableConfigurationProperties
 	static class ExampleSdkHttpClientBuilderConfiguration {
@@ -224,6 +230,13 @@ public class AwsV2ConfigurationTest {
 			when(builder.buildWithDefaults(any())).thenReturn(MOCK_SDK_ASYNC_HTTP_CLIENT);
 			return builder;
 		}
+		
+		@Bean
+		public SdkAsyncHttpClient.Builder<?> exampleSdkAsyncHttpClientBuilderForEc2() {
+			SdkAsyncHttpClient.Builder<?> builder = mock(SdkAsyncHttpClient.Builder.class);
+			when(builder.buildWithDefaults(any())).thenReturn(MOCK_SDK_ASYNC_HTTP_CLIENT2);
+			return builder;
+		}
 	}
 	
 	
@@ -231,7 +244,6 @@ public class AwsV2ConfigurationTest {
 	public void sdkHttpClientBuilderConfiguration() {
 		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
 			.withPropertyValues("aws2.ec2.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
-			.withPropertyValues("aws2.ec2-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
 			.run(context -> {
 				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -241,7 +253,17 @@ public class AwsV2ConfigurationTest {
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT);
+						.isInstanceOf(NettyNioAsyncHttpClient.class);
+				});
+				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isInstanceOf(ApacheHttpClient.class);
+				});
+				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isInstanceOf(NettyNioAsyncHttpClient.class);
 				});
 			});
 	}
@@ -258,6 +280,46 @@ public class AwsV2ConfigurationTest {
 						.isSameAs(MOCK_SDK_HTTP_CLIENT);
 				});
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT);
+				});
+			});
+	}
+	
+	@Test
+	public void sdkHttpClientBuilderDefaultConfigurationOverride() {
+		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
+			.withPropertyValues("aws2.default.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
+			.withPropertyValues("aws2.default-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
+			.withPropertyValues("aws2.ec2-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilderForEc2")
+			.run(context -> {
+				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT2);
+				});
+				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
+					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
+					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
+						.isSameAs(MOCK_SDK_HTTP_CLIENT);
+				});
+				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
 						.isSameAs(MOCK_SDK_ASYNC_HTTP_CLIENT);

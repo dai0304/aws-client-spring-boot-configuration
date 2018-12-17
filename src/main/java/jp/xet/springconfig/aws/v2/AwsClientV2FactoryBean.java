@@ -66,25 +66,18 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 	
 	
 	private static AwsClientV2Properties getAwsClientProperties(
-			Map<String, AwsClientV2Properties> stringAwsClientPropertiesMap, Class<?> clientClass) {
+			Map<String, AwsClientV2Properties> map, Class<?> clientClass) {
 		try {
 			String servicePackageName = clientClass.getPackage().getName()
 				.substring("software.amazon.awssdk.services.".length())
 				.replace('.', '-');
+			String serviceNameSuffix = clientClass.getName().endsWith("AsyncClient") ? "-async" : "";
 			
-			if (clientClass.getName().endsWith("AsyncClient")) {
-				AwsClientV2Properties asyncProperties = stringAwsClientPropertiesMap.get(servicePackageName + "-async");
-				if (asyncProperties != null) {
-					return asyncProperties;
-				}
-				return stringAwsClientPropertiesMap.get(DEFAULT_NAME + "-async");
-			} else {
-				AwsClientV2Properties serviceProperties = stringAwsClientPropertiesMap.get(servicePackageName);
-				if (serviceProperties != null) {
-					return serviceProperties;
-				}
-				return stringAwsClientPropertiesMap.get(DEFAULT_NAME);
+			AwsClientV2Properties asyncProperties = map.get(servicePackageName + serviceNameSuffix);
+			if (asyncProperties != null) {
+				return asyncProperties;
 			}
+			return map.get(DEFAULT_NAME + serviceNameSuffix);
 		} catch (IndexOutOfBoundsException e) {
 			log.error("Failed to get property name: {}", clientClass);
 			throw e;

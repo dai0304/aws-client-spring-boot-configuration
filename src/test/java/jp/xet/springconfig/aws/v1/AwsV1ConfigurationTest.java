@@ -94,6 +94,7 @@ public class AwsV1ConfigurationTest {
 			assertThat(context).getBean(AmazonSNS.class)
 				.isInstanceOfSatisfying(AmazonSNSClient.class, this::assertDefaultClientConfiguration);
 			
+			// not defined in the annotation
 			assertThat(context).doesNotHaveBean(AmazonAlexaForBusiness.class);
 			
 			// not in classpath
