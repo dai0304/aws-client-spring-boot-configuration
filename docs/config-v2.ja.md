@@ -146,24 +146,6 @@ aws2.sqs-async.region=eu-central-1
 この場合 `SqsClient` のリージョンは `us-east-1`、
 `SqsAsyncClient` のリージョンは `eu-central-1` となります。
 
-### 全クライアント共通の設定をしたい
-
-Spring Boot のプロパティとして `aws2.default.*` の設定を行います。
-ただし **service-name** に対する個別の設定をした場合はそちらの設定を優先します。
-
-`aws2.default.*` の設定は async client に影響しません。
-async client に対する共通設定は `aws2.default-async.*` をご利用ください。
-
-#### 全体と SQS に対する設定例
-
-```properties
-aws2.default.region=ap-northeast-1
-aws2.sqs.region=eu-west-2
-```
-
-この場合 SQS を除くすべてのクライアントのリージョンは `ap-northeast-1`、
-SQS のリージョンのみ `eu-west-2` となります。
-
 ### `S3ClientBuilder` に対する `S3Configuration` (serviceConfiguration) を設定したい
 
 Spring Boot のプロパティとして `aws2.s3.*` の設定を行います。

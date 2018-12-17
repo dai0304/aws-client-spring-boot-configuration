@@ -196,7 +196,7 @@ public class AwsV2ConfigurationTest {
 	@Test
 	public void credentialsProviderConfiguration() {
 		this.contextRunner.withUserConfiguration(ExampleCredentialsProviderConfiguration.class)
-			.withPropertyValues("aws2.default.credentials-provider-bean-name=exampleAwsCredentialsProvider")
+			.withPropertyValues("aws2.ec2.credentials-provider-bean-name=exampleAwsCredentialsProvider")
 			.run(context -> {
 				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -271,8 +271,10 @@ public class AwsV2ConfigurationTest {
 	@Test
 	public void sdkHttpClientBuilderDefaultConfiguration() {
 		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
-			.withPropertyValues("aws2.default.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
-			.withPropertyValues("aws2.default-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
+			.withPropertyValues("aws2.ec2.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
+			.withPropertyValues("aws2.ec2-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
+			.withPropertyValues("aws2.sqs.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
+			.withPropertyValues("aws2.sqs-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
 			.run(context -> {
 				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -300,9 +302,10 @@ public class AwsV2ConfigurationTest {
 	@Test
 	public void sdkHttpClientBuilderDefaultConfigurationOverride() {
 		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
-			.withPropertyValues("aws2.default.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
-			.withPropertyValues("aws2.default-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
+			.withPropertyValues("aws2.ec2.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
 			.withPropertyValues("aws2.ec2-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilderForEc2")
+			.withPropertyValues("aws2.sqs.http-client-builder-bean-name=exampleSdkHttpClientBuilder")
+			.withPropertyValues("aws2.sqs-async.http-client-builder-bean-name=exampleSdkAsyncHttpClientBuilder")
 			.run(context -> {
 				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -343,16 +346,15 @@ public class AwsV2ConfigurationTest {
 	@Test
 	public void asyncConfiguration() {
 		String defaultRegion = "eu-west-2";
-		String defaultAsyncRegion = "eu-west-3";
 		String sqsRegion = "sa-east-1";
 		String sqsEndpoint = "http://localhost:60002";
 		String snsRegion = "ca-central-1";
 		String snsEndpoint = "http://localhost:60003";
 		String snsAsyncRegion = "ap-south-1";
 		String snsAsyncEndpoint = "http://localhost:60004";
+		
+		System.setProperty("aws.region", defaultRegion);
 		this.contextRunner.withUserConfiguration(ExampleSqsSnsSyncAsyncConfiguration.class)
-			.withPropertyValues("aws2.default.region=" + defaultRegion)
-			.withPropertyValues("aws2.default-async.region=" + defaultAsyncRegion)
 			.withPropertyValues("aws2.sqs.region=" + sqsRegion)
 			.withPropertyValues("aws2.sqs.endpoint=" + sqsEndpoint)
 			.withPropertyValues("aws2.sns.region=" + snsRegion)
@@ -374,9 +376,9 @@ public class AwsV2ConfigurationTest {
 						// use aws.sqs-async.* (present) -> aws.default-async.*
 						SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 						assertThat(clientConfiguration.option(AwsClientOption.AWS_REGION))
-							.isEqualTo(Region.of(defaultAsyncRegion));
+							.isEqualTo(Region.of(defaultRegion));
 						assertThat(clientConfiguration.option(SdkClientOption.ENDPOINT))
-							.isEqualTo(URI.create("https://sqs." + defaultAsyncRegion + ".amazonaws.com"));
+							.isEqualTo(URI.create("https://sqs." + defaultRegion + ".amazonaws.com"));
 					});
 				assertThat(context.getBean(SnsClient.class.getName()))
 					.satisfies(client -> {
@@ -397,6 +399,7 @@ public class AwsV2ConfigurationTest {
 							.isEqualTo(URI.create(snsAsyncEndpoint));
 					});
 			});
+		System.clearProperty("aws.region");
 	}
 	
 	@Test

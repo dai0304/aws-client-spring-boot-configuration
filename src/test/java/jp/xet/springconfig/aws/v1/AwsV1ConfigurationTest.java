@@ -104,7 +104,7 @@ public class AwsV1ConfigurationTest {
 	
 	private void assertDefaultClientConfiguration(AmazonWebServiceClient client) {
 		assertThat(client.getClientConfiguration()).isNotNull();
-		assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(50000); // default
+		assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(50000); // AWS default
 	}
 	
 	
@@ -143,22 +143,23 @@ public class AwsV1ConfigurationTest {
 	}
 	
 	@Test
-	public void defaultConfigurationAndOverride() {
+	public void configuredClient_SyncOnly() {
+		System.setProperty("aws.region", "ap-south-1");
 		this.contextRunner.withUserConfiguration(ExampleS3SqsSnsConfiguration.class)
-			.withPropertyValues("aws1.default.client.socket-timeout=123")
-			.withPropertyValues("aws1.default.region=us-east-1")
+			.withPropertyValues("aws1.sqs.client.socket-timeout=123")
 			.withPropertyValues("aws1.sqs.region=eu-central-1")
 			.withPropertyValues("aws1.sns.client.socket-timeout=456")
+			.withPropertyValues("aws1.sns.region=us-east-1")
 			.run(context -> {
 				assertThat(context.getBean(AmazonS3.class)).isInstanceOfSatisfying(AmazonS3Client.class, client -> {
 					assertThat(client.getClientConfiguration().getSocketTimeout())
-						.isEqualTo(123); // aws1.default.client.socket-timeout
+						.isEqualTo(50000); // AWS default
 					assertThat(client).hasFieldOrPropertyWithValue("endpoint",
-							URI.create("https://s3.amazonaws.com")); // default
+							URI.create("https://s3.ap-south-1.amazonaws.com")); // AWS default
 				});
 				assertThat(context.getBean(AmazonSQS.class)).isInstanceOfSatisfying(AmazonSQSClient.class, client -> {
 					assertThat(client.getClientConfiguration().getSocketTimeout())
-						.isEqualTo(123); // aws1.default.client.socket-timeout
+						.isEqualTo(123); // aws1.sqs.client.socket-timeout
 					assertThat(client).hasFieldOrPropertyWithValue("endpoint",
 							URI.create("https://sqs.eu-central-1.amazonaws.com")); // aws1.sqs.region
 				});
@@ -166,9 +167,10 @@ public class AwsV1ConfigurationTest {
 					assertThat(client.getClientConfiguration().getSocketTimeout())
 						.isEqualTo(456); // aws1.sns.client.socket-timeout
 					assertThat(client).hasFieldOrPropertyWithValue("endpoint",
-							URI.create("https://sns.us-east-1.amazonaws.com")); // aws1.default.region
+							URI.create("https://sns.us-east-1.amazonaws.com")); // aws1.sns.region
 				});
 			});
+		System.clearProperty("aws.region");
 	}
 	
 	
@@ -185,9 +187,9 @@ public class AwsV1ConfigurationTest {
 	
 	
 	@Test
-	public void asyncConfiguration() {
-		int defaultAsyncSocketTimeout = 1;
-		String defaultAsyncEndpoint = "http://localhost:60001";
+	public void configuredClient_BothSyncAndAsync() {
+		int sqsAsyncSocketTimeout = 1;
+		String sqsAsyncEndpoint = "http://localhost:60001";
 		int sqsSocketTimeout = 2;
 		String sqsEndpoint = "http://localhost:60002";
 		int snsSocketTimeout = 3;
@@ -195,10 +197,10 @@ public class AwsV1ConfigurationTest {
 		int snsAsyncSocketTimeout = 4;
 		String snsAsyncEndpoint = "http://localhost:60004";
 		this.contextRunner.withUserConfiguration(ExampleSqsSnsSyncAsyncConfiguration.class)
-			.withPropertyValues("aws1.default-async.client.socket-timeout=" + defaultAsyncSocketTimeout)
-			.withPropertyValues("aws1.default-async.endpoint.service-endpoint=" + defaultAsyncEndpoint)
 			.withPropertyValues("aws1.sqs.client.socket-timeout=" + sqsSocketTimeout)
 			.withPropertyValues("aws1.sqs.endpoint.service-endpoint=" + sqsEndpoint)
+			.withPropertyValues("aws1.sqs-async.client.socket-timeout=" + sqsAsyncSocketTimeout)
+			.withPropertyValues("aws1.sqs-async.endpoint.service-endpoint=" + sqsAsyncEndpoint)
 			.withPropertyValues("aws1.sns.client.socket-timeout=" + snsSocketTimeout)
 			.withPropertyValues("aws1.sns.endpoint.service-endpoint=" + snsEndpoint)
 			.withPropertyValues("aws1.sns-async.client.socket-timeout=" + snsAsyncSocketTimeout)
@@ -206,26 +208,26 @@ public class AwsV1ConfigurationTest {
 			.run(context -> {
 				assertThat(context.getBean(AmazonSQS.class.getName()))
 					.isInstanceOfSatisfying(AmazonSQSClient.class, client -> {
-						// use aws.sqs.* (present)
+						// use aws.sqs.*
 						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(sqsEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(sqsSocketTimeout);
 					});
 				assertThat(context.getBean(AmazonSQSAsync.class))
 					.isInstanceOfSatisfying(AmazonSQSAsyncClient.class, client -> {
-						// use aws.sqs-async.* (absent) -> aws.default-async.*
-						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(defaultAsyncEndpoint));
+						// use aws.sqs-async.*
+						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(sqsAsyncEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout())
-							.isEqualTo(defaultAsyncSocketTimeout);
+							.isEqualTo(sqsAsyncSocketTimeout);
 					});
 				assertThat(context.getBean(AmazonSNS.class.getName()))
 					.isInstanceOfSatisfying(AmazonSNSClient.class, client -> {
-						// use aws.sns.* (present)
+						// use aws.sns.*
 						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(snsSocketTimeout);
 					});
 				assertThat(context.getBean(AmazonSNSAsync.class))
 					.isInstanceOfSatisfying(AmazonSNSAsyncClient.class, client -> {
-						// use aws.sns-async.* (present)
+						// use aws.sns-async.*
 						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsAsyncEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout())
 							.isEqualTo(snsAsyncSocketTimeout);
@@ -242,7 +244,7 @@ public class AwsV1ConfigurationTest {
 	
 	
 	@Test
-	public void s3Configurations_default() {
+	public void defaultS3Client() {
 		this.contextRunner.withUserConfiguration(ExampleS3Configuration.class).run(context -> {
 			assertThat(context.getBean(AmazonS3.class)).isInstanceOfSatisfying(AmazonS3Client.class, client -> {
 				S3ClientOptions clientOptions =
@@ -259,7 +261,7 @@ public class AwsV1ConfigurationTest {
 	}
 	
 	@Test
-	public void s3Configurations() {
+	public void configuredS3Client() {
 		this.contextRunner.withUserConfiguration(ExampleS3Configuration.class)
 			.withPropertyValues("aws1.s3.path-style-access-enabled=true")
 			.withPropertyValues("aws1.s3.chunked-encoding-disabled=true")

@@ -103,24 +103,6 @@ aws1.sqs-async.client.socket-timeout=1000
 この場合 `AmazonSQS` のソケットタイムアウトは 2 秒、
 `AmazonSQSAsync` のソケットタイムアウトは 1 秒となります。
 
-### 全クライアント共通の設定をしたい
-
-Spring Boot のプロパティとして `aws1.default.*` の設定を行います。
-ただし **service-name** に対する個別の設定をした場合はそちらの設定を優先します。
-
-`aws1.default.*` の設定は async client に影響しません。
-async client に対する共通設定は `aws1.default-async.*` をご利用ください。
-
-#### 全体と SQS に対する設定例
-
-```properties
-aws1.default.client.socket-timeout=3000
-aws1.sqs.client.socket-timeout=25000
-```
-
-この場合 SQS を除くすべてのクライアントのソケットタイムアウトは 3 秒、
-SQS のソケットタイムアウトのみ 25 秒となります。
-
 ### `AmazonS3Builder` に対する `S3ClientOptions` を設定したい
 
 Spring Boot のプロパティとして `aws1.s3.*` の設定を行います。

@@ -98,9 +98,18 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 	@Test
 	public void sdkHttpClientBuilderDefaultConfiguration() {
 		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
-			.withPropertyValues("aws2.default.apache-http-client-builder.socket-timeout=15s")
-			.withPropertyValues("aws2.default.apache-http-client-builder.connection-timeout=1s")
-			.withPropertyValues("aws2.default.apache-http-client-builder.max-connections=60")
+			.withPropertyValues("aws2.ec2.apache-http-client-builder.socket-timeout=15s")
+			.withPropertyValues("aws2.ec2.apache-http-client-builder.connection-timeout=1s")
+			.withPropertyValues("aws2.ec2.apache-http-client-builder.max-connections=60")
+			.withPropertyValues("aws2.ec2-async.apache-http-client-builder.socket-timeout=15s")
+			.withPropertyValues("aws2.ec2-async.apache-http-client-builder.connection-timeout=1s")
+			.withPropertyValues("aws2.ec2-async.apache-http-client-builder.max-connections=60")
+			.withPropertyValues("aws2.sqs.apache-http-client-builder.socket-timeout=15s")
+			.withPropertyValues("aws2.sqs.apache-http-client-builder.connection-timeout=1s")
+			.withPropertyValues("aws2.sqs.apache-http-client-builder.max-connections=60")
+			.withPropertyValues("aws2.sqs-async.apache-http-client-builder.socket-timeout=15s")
+			.withPropertyValues("aws2.sqs-async.apache-http-client-builder.connection-timeout=1s")
+			.withPropertyValues("aws2.sqs-async.apache-http-client-builder.max-connections=60")
 			.run(context -> {
 				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -128,19 +137,19 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 	@Test
 	public void sdkHttpClientBuilderDefaultConfigurationOverride() {
 		this.contextRunner.withUserConfiguration(ExampleSdkHttpClientBuilderConfiguration.class)
-			.withPropertyValues("aws2.default.apache-http-client-builder.socket-timeout=15s")
-			.withPropertyValues("aws2.default.apache-http-client-builder.connection-timeout=1s")
-			.withPropertyValues("aws2.default.apache-http-client-builder.max-connections=60")
-			.withPropertyValues("aws2.default-async.netty-nio-async-http-client-builder.max-concurrency=123")
-			.withPropertyValues("aws2.default-async.netty-nio-async-http-client-builder.read-timeout=40s")
-			.withPropertyValues("aws2.default-async.netty-nio-async-http-client-builder.write-timeout=50s")
-			.withPropertyValues("aws2.default-async.netty-nio-async-http-client-builder.connection-timeout=1s")
-			.withPropertyValues("aws2.ec2-async.netty-nio-async-http-client-builder.connection-timeout=2s")
+			.withPropertyValues("aws2.ec2-async.netty-nio-async-http-client-builder.max-concurrency=123")
+			.withPropertyValues("aws2.sqs.apache-http-client-builder.socket-timeout=15s")
+			.withPropertyValues("aws2.sqs.apache-http-client-builder.connection-timeout=1s")
+			.withPropertyValues("aws2.sqs.apache-http-client-builder.max-connections=60")
+			.withPropertyValues("aws2.sqs-async.netty-nio-async-http-client-builder.max-concurrency=123")
+			.withPropertyValues("aws2.sqs-async.netty-nio-async-http-client-builder.read-timeout=40s")
+			.withPropertyValues("aws2.sqs-async.netty-nio-async-http-client-builder.write-timeout=50s")
+			.withPropertyValues("aws2.sqs-async.netty-nio-async-http-client-builder.connection-timeout=1s")
 			.run(context -> {
 				assertThat(context.getBean(Ec2Client.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.SYNC_HTTP_CLIENT))
-						.isInstanceOfSatisfying(ApacheHttpClient.class, this::isConfiguredClient);
+						.isInstanceOfSatisfying(ApacheHttpClient.class, this::isDefaultClient);
 				});
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -204,7 +213,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 		assertThat(TestUtil.extractConfig(c))
 			.returns(2000, NettyConfiguration::connectTimeoutMillis)
 			.returns(10000, NettyConfiguration::connectionAcquireTimeoutMillis)
-			.returns(50, NettyConfiguration::maxConnections)
+			.returns(123, NettyConfiguration::maxConnections)
 			.returns(30000, NettyConfiguration::readTimeoutMillis)
 			.returns(30000, NettyConfiguration::writeTimeoutMillis);
 	}
