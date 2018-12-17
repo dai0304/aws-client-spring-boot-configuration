@@ -111,6 +111,10 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 		if (config == null) {
 			return;
 		}
+		BeanFactory beanFactory = getBeanFactory();
+		if (beanFactory == null) {
+			return;
+		}
 		
 		Optional.ofNullable(config.getEndpoint())
 			.ifPresent(endpoint -> configureEndpoint(builder, endpoint));
@@ -118,6 +122,30 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 		Optional.ofNullable(config.getRegion())
 			.ifPresent(region -> configureRegion(builder, region));
 		
+		configureSdkHttpClientBuilder(builder, config, beanFactory);
+		
+		Optional.ofNullable(config.getCredentialsProviderBeanName())
+			.ifPresent(credentialsProviderBeanName -> {
+				AwsCredentialsProvider credentialsProvider =
+						beanFactory.getBean(credentialsProviderBeanName, AwsCredentialsProvider.class);
+				configureCredentialsProvider(builder, credentialsProvider);
+			});
+		
+		Optional.ofNullable(config.getClientOverrideConfigurationBeanName())
+			.ifPresent(clientOverrideConfigurationBeanName -> {
+				ClientOverrideConfiguration clientOverrideConfiguration =
+						beanFactory.getBean(clientOverrideConfigurationBeanName, ClientOverrideConfiguration.class);
+				configureClientOverrideConfiguration(builder, clientOverrideConfiguration);
+			});
+		
+		Optional.ofNullable(config.getHttpClientBeanName())
+			.ifPresent(httpClientBeanName -> {
+				SdkHttpClient sdkHttpClient = beanFactory.getBean(httpClientBeanName, SdkHttpClient.class);
+				configureHttpClient(builder, sdkHttpClient);
+			});
+	}
+	
+	private void configureSdkHttpClientBuilder(Object builder, AwsClientV2Properties config, BeanFactory beanFactory) {
 		if (builder instanceof SdkSyncClientBuilder) {
 			Optional.ofNullable(config.getApacheHttpClientBuilder())
 				.map(sdkClientConfig -> {
@@ -149,7 +177,6 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 				.ifPresent(sdkHttpClientBuilder -> configureHttpSyncClientBuilder(builder, sdkHttpClientBuilder));
 		}
 		
-		BeanFactory beanFactory = getBeanFactory();
 		if (builder instanceof SdkAsyncClientBuilder) {
 			Optional.ofNullable(config.getNettyNioAsyncHttpClientBuilder())
 				.map(sdkClientConfig -> {
@@ -166,58 +193,34 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 						.ifPresent(nettyNioAsyncHttpClientBuilder::connectionAcquisitionTimeout);
 					Optional.ofNullable(sdkClientConfig.getConnectionTimeout())
 						.ifPresent(nettyNioAsyncHttpClientBuilder::connectionTimeout);
-					if (beanFactory != null) {
-						if (sdkClientConfig.getEventLoopGroupBeanName() != null) {
-							SdkEventLoopGroup eventLoopGroup = beanFactory.getBean(
-									sdkClientConfig.getEventLoopGroupBeanName(), SdkEventLoopGroup.class);
-							nettyNioAsyncHttpClientBuilder.eventLoopGroup(eventLoopGroup);
-						}
-						if (sdkClientConfig.getEventLoopGroupBuilderBeanName() != null) {
-							SdkEventLoopGroup.Builder eventLoopGroupBuilder = beanFactory.getBean(
-									sdkClientConfig.getEventLoopGroupBeanName(), SdkEventLoopGroup.Builder.class);
-							nettyNioAsyncHttpClientBuilder.eventLoopGroupBuilder(eventLoopGroupBuilder);
-						}
+					if (sdkClientConfig.getEventLoopGroupBeanName() != null) {
+						SdkEventLoopGroup eventLoopGroup = beanFactory.getBean(
+								sdkClientConfig.getEventLoopGroupBeanName(), SdkEventLoopGroup.class);
+						nettyNioAsyncHttpClientBuilder.eventLoopGroup(eventLoopGroup);
+					}
+					if (sdkClientConfig.getEventLoopGroupBuilderBeanName() != null) {
+						SdkEventLoopGroup.Builder eventLoopGroupBuilder = beanFactory.getBean(
+								sdkClientConfig.getEventLoopGroupBeanName(), SdkEventLoopGroup.Builder.class);
+						nettyNioAsyncHttpClientBuilder.eventLoopGroupBuilder(eventLoopGroupBuilder);
 					}
 					return nettyNioAsyncHttpClientBuilder;
 				})
 				.ifPresent(sdkHttpClientBuilder -> configureHttpAsyncClientBuilder(builder, sdkHttpClientBuilder));
 		}
 		
-		if (beanFactory != null) {
-			Optional.ofNullable(config.getCredentialsProviderBeanName())
-				.ifPresent(credentialsProviderBeanName -> {
-					AwsCredentialsProvider credentialsProvider =
-							beanFactory.getBean(credentialsProviderBeanName, AwsCredentialsProvider.class);
-					configureCredentialsProvider(builder, credentialsProvider);
-				});
-			
-			Optional.ofNullable(config.getClientOverrideConfigurationBeanName())
-				.ifPresent(clientOverrideConfigurationBeanName -> {
-					ClientOverrideConfiguration clientOverrideConfiguration =
-							beanFactory.getBean(clientOverrideConfigurationBeanName, ClientOverrideConfiguration.class);
-					configureClientOverrideConfiguration(builder, clientOverrideConfiguration);
-				});
-			
-			Optional.ofNullable(config.getHttpClientBuilderBeanName())
-				.ifPresent(httpClientBuilderBeanName -> {
-					if (builder instanceof SdkSyncClientBuilder) {
-						SdkHttpClient.Builder<?> sdkHttpClientBuilder =
-								beanFactory.getBean(httpClientBuilderBeanName, SdkHttpClient.Builder.class);
-						configureHttpSyncClientBuilder(builder, sdkHttpClientBuilder);
-					}
-					if (builder instanceof SdkAsyncClientBuilder) {
-						SdkAsyncHttpClient.Builder<?> sdkHttpClientBuilder =
-								beanFactory.getBean(httpClientBuilderBeanName, SdkAsyncHttpClient.Builder.class);
-						configureHttpAsyncClientBuilder(builder, sdkHttpClientBuilder);
-					}
-				});
-			
-			Optional.ofNullable(config.getHttpClientBeanName())
-				.ifPresent(httpClientBeanName -> {
-					SdkHttpClient sdkHttpClient = beanFactory.getBean(httpClientBeanName, SdkHttpClient.class);
-					configureHttpClient(builder, sdkHttpClient);
-				});
-		}
+		Optional.ofNullable(config.getHttpClientBuilderBeanName())
+			.ifPresent(httpClientBuilderBeanName -> {
+				if (builder instanceof SdkSyncClientBuilder) {
+					SdkHttpClient.Builder<?> sdkHttpClientBuilder =
+							beanFactory.getBean(httpClientBuilderBeanName, SdkHttpClient.Builder.class);
+					configureHttpSyncClientBuilder(builder, sdkHttpClientBuilder);
+				}
+				if (builder instanceof SdkAsyncClientBuilder) {
+					SdkAsyncHttpClient.Builder<?> sdkHttpClientBuilder =
+							beanFactory.getBean(httpClientBuilderBeanName, SdkAsyncHttpClient.Builder.class);
+					configureHttpAsyncClientBuilder(builder, sdkHttpClientBuilder);
+				}
+			});
 	}
 	
 	@Override

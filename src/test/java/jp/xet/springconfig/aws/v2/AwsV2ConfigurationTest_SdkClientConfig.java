@@ -80,7 +80,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultClient);
+						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultAsyncClient);
 				});
 				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -90,7 +90,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultClient);
+						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultAsyncClient);
 				});
 			});
 	}
@@ -119,7 +119,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultClient);
+						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultAsyncClient);
 				});
 				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -129,7 +129,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultClient);
+						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isDefaultAsyncClient);
 				});
 			});
 	}
@@ -154,7 +154,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 				assertThat(context.getBean(Ec2AsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isConfiguredEc2Client);
+						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isConfiguredEc2AsyncClient);
 				});
 				assertThat(context.getBean(SqsClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
@@ -164,7 +164,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 				assertThat(context.getBean(SqsAsyncClient.class)).satisfies(client -> {
 					SdkClientConfiguration clientConfiguration = TestUtil.extractClientConfig(client);
 					assertThat(clientConfiguration.option(SdkClientOption.ASYNC_HTTP_CLIENT))
-						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isConfiguredClient);
+						.isInstanceOfSatisfying(NettyNioAsyncHttpClient.class, this::isConfiguredAsyncClient);
 				});
 			});
 	}
@@ -191,7 +191,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 			.returns(10000, m -> m.get(SdkHttpConfigurationOption.MAX_PENDING_CONNECTION_ACQUIRES));
 	}
 	
-	private void isDefaultClient(NettyNioAsyncHttpClient c) {
+	private void isDefaultAsyncClient(NettyNioAsyncHttpClient c) {
 		assertThat(TestUtil.extractConfig(c))
 			.returns(2000, NettyConfiguration::connectTimeoutMillis)
 			.returns(10000, NettyConfiguration::connectionAcquireTimeoutMillis)
@@ -200,7 +200,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 			.returns(30000, NettyConfiguration::writeTimeoutMillis);
 	}
 	
-	private void isConfiguredClient(NettyNioAsyncHttpClient c) {
+	private void isConfiguredAsyncClient(NettyNioAsyncHttpClient c) {
 		assertThat(TestUtil.extractConfig(c))
 			.returns(1000, NettyConfiguration::connectTimeoutMillis)
 			.returns(10000, NettyConfiguration::connectionAcquireTimeoutMillis)
@@ -209,7 +209,7 @@ public class AwsV2ConfigurationTest_SdkClientConfig {
 			.returns(50000, NettyConfiguration::writeTimeoutMillis);
 	}
 	
-	private void isConfiguredEc2Client(NettyNioAsyncHttpClient c) {
+	private void isConfiguredEc2AsyncClient(NettyNioAsyncHttpClient c) {
 		assertThat(TestUtil.extractConfig(c))
 			.returns(2000, NettyConfiguration::connectTimeoutMillis)
 			.returns(10000, NettyConfiguration::connectionAcquireTimeoutMillis)
