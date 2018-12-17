@@ -87,9 +87,11 @@ static class ExampleClientConfiguration {
 ```
 
  
-### sync client と async client で個別の設定をしたい
+### async client の設定をしたい
 
 Spring Boot のプロパティとして `aws1.<service-name>-async.*` の設定を行います。
+
+`aws1.<service-name>.*` の設定は async client に影響しません。
 
 #### SQS sync / async に対する設定例
 
@@ -105,6 +107,9 @@ aws1.sqs-async.client.socket-timeout=1000
 
 Spring Boot のプロパティとして `aws1.default.*` の設定を行います。
 ただし **service-name** に対する個別の設定をした場合はそちらの設定を優先します。
+
+`aws1.default.*` の設定は async client に影響しません。
+async client に対する共通設定は `aws1.default-async.*` をご利用ください。
 
 #### 全体と SQS に対する設定例
 

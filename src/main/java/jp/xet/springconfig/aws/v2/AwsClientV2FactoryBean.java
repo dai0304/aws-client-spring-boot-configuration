@@ -77,12 +77,14 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 				if (asyncProperties != null) {
 					return asyncProperties;
 				}
+				return stringAwsClientPropertiesMap.get(DEFAULT_NAME + "-async");
+			} else {
+				AwsClientV2Properties serviceProperties = stringAwsClientPropertiesMap.get(servicePackageName);
+				if (serviceProperties != null) {
+					return serviceProperties;
+				}
+				return stringAwsClientPropertiesMap.get(DEFAULT_NAME);
 			}
-			AwsClientV2Properties serviceProperties = stringAwsClientPropertiesMap.get(servicePackageName);
-			if (serviceProperties != null) {
-				return serviceProperties;
-			}
-			return stringAwsClientPropertiesMap.get(DEFAULT_NAME);
 		} catch (IndexOutOfBoundsException e) {
 			log.error("Failed to get property name: {}", clientClass);
 			throw e;

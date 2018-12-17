@@ -184,7 +184,9 @@ public class AwsV1ConfigurationTest {
 	
 	
 	@Test
-	public void asyncConfigurationOverride() {
+	public void asyncConfiguration() {
+		int defaultAsyncSocketTimeout = 1;
+		String defaultAsyncEndpoint = "http://localhost:60001";
 		int sqsSocketTimeout = 2;
 		String sqsEndpoint = "http://localhost:60002";
 		int snsSocketTimeout = 3;
@@ -192,6 +194,8 @@ public class AwsV1ConfigurationTest {
 		int snsAsyncSocketTimeout = 4;
 		String snsAsyncEndpoint = "http://localhost:60004";
 		this.contextRunner.withUserConfiguration(ExampleSqsSnsSyncAsyncConfiguration.class)
+			.withPropertyValues("aws1.default-async.client.socket-timeout=" + defaultAsyncSocketTimeout)
+			.withPropertyValues("aws1.default-async.endpoint.service-endpoint=" + defaultAsyncEndpoint)
 			.withPropertyValues("aws1.sqs.client.socket-timeout=" + sqsSocketTimeout)
 			.withPropertyValues("aws1.sqs.endpoint.service-endpoint=" + sqsEndpoint)
 			.withPropertyValues("aws1.sns.client.socket-timeout=" + snsSocketTimeout)
@@ -201,25 +205,26 @@ public class AwsV1ConfigurationTest {
 			.run(context -> {
 				assertThat(context.getBean(AmazonSQS.class.getName()))
 					.isInstanceOfSatisfying(AmazonSQSClient.class, client -> {
-						// use aws.sqs.*
+						// use aws.sqs.* (present)
 						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(sqsEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(sqsSocketTimeout);
 					});
 				assertThat(context.getBean(AmazonSQSAsync.class))
 					.isInstanceOfSatisfying(AmazonSQSAsyncClient.class, client -> {
-						// use aws.sqs.*
-						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(sqsEndpoint));
-						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(sqsSocketTimeout);
+						// use aws.sqs-async.* (absent) -> aws.default-async.*
+						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(defaultAsyncEndpoint));
+						assertThat(client.getClientConfiguration().getSocketTimeout())
+							.isEqualTo(defaultAsyncSocketTimeout);
 					});
 				assertThat(context.getBean(AmazonSNS.class.getName()))
 					.isInstanceOfSatisfying(AmazonSNSClient.class, client -> {
-						// use aws.sns.*
+						// use aws.sns.* (present)
 						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout()).isEqualTo(snsSocketTimeout);
 					});
 				assertThat(context.getBean(AmazonSNSAsync.class))
 					.isInstanceOfSatisfying(AmazonSNSAsyncClient.class, client -> {
-						// use aws.sns-async.*
+						// use aws.sns-async.* (present)
 						assertThat(client).hasFieldOrPropertyWithValue("endpoint", URI.create(snsAsyncEndpoint));
 						assertThat(client.getClientConfiguration().getSocketTimeout())
 							.isEqualTo(snsAsyncSocketTimeout);
