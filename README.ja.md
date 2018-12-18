@@ -124,4 +124,4 @@ AWS クライアントはそれぞれ **service-name** を持ちます。
 
 Copyright (C) 2018 Daisuke Miyamoto
 
-Distributed under the Apache License v2.0. See the file copyright/LICENSE.txt.
+Distributed under the Apache License v2.0. See the file [LICENSE](LICENSE).
