@@ -183,7 +183,7 @@ class AwsClientV2Configuration {
 		
 		private Boolean accelerateModeEnabled;
 		
-		private Boolean payloadSigningEnabled;
+		private Boolean checksumValidationEnabled;
 		
 		private Boolean dualstackEnabled;
 	}
