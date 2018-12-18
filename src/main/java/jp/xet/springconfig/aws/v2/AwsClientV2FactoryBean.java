@@ -238,6 +238,9 @@ class AwsClientV2FactoryBean<T>extends AbstractFactoryBean<T> {
 			invokeMethod(configBuilder, "chunkedEncodingEnabled", awsS3ClientV2Properties.getChunkedEncodingEnabled());
 			invokeMethod(configBuilder, "accelerateModeEnabled", awsS3ClientV2Properties.getAccelerateModeEnabled());
 			invokeMethod(configBuilder, "dualstackEnabled", awsS3ClientV2Properties.getDualstackEnabled());
+			invokeMethod(configBuilder, "checksumValidationEnabled",
+					awsS3ClientV2Properties.getChecksumValidationEnabled());
+			
 			ServiceConfiguration serviceConfiguration = build(configBuilder);
 			configureServiceConfiguration(builder, serviceConfiguration);
 		} catch (ClassNotFoundException e) {
