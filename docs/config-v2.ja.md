@@ -130,9 +130,11 @@ static class ExampleHttpClientBuilderConfiguration {
 ```
  
  
-### sync client と async client で個別の設定をしたい
+### async client の設定をしたい
 
 Spring Boot のプロパティとして `aws2.<service-name>-async.*` の設定を行います。
+
+`aws2.<service-name>.*` の設定は async client に影響しません。
 
 #### SQS sync / async に対する設定例
 
@@ -143,21 +145,6 @@ aws2.sqs-async.region=eu-central-1
 
 この場合 `SqsClient` のリージョンは `us-east-1`、
 `SqsAsyncClient` のリージョンは `eu-central-1` となります。
-
-### 全クライアント共通の設定をしたい
-
-Spring Boot のプロパティとして `aws2.default.*` の設定を行います。
-ただし **service-name** に対する個別の設定をした場合はそちらの設定を優先します。
-
-#### 全体と SQS に対する設定例
-
-```properties
-aws2.default.region=ap-northeast-1
-aws2.sqs.region=eu-west-2
-```
-
-この場合 SQS を除くすべてのクライアントのリージョンは `ap-northeast-1`、
-SQS のリージョンのみ `eu-west-2` となります。
 
 ### `S3ClientBuilder` に対する `S3Configuration` (serviceConfiguration) を設定したい
 

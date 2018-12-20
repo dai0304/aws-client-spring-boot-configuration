@@ -129,9 +129,11 @@ static class ExampleHttpClientBuilderConfiguration {
 ```
  
  
-### How to make individual settings with sync client and async client?
+### How to configure async client?
 
 Set `aws2.<service-name>-async.*` as the property of Spring Boot.
+
+`aws2.<service-name>.*` does not affect to async client configuration.
 
 #### Configuration example for SQS sync / async clients
 
@@ -142,21 +144,6 @@ aws2.sqs-async.region=eu-central-1
 
 In this case, the region for `SqsClient` is `us-east-1`,
 and the region for `SqsAsyncClient` is `eu-central-1`.
-
-### Default configuration for all clients
-
-Set `aws2.default.*` as the property of Spring Boot.
-However, if you set individual settings for **service-name**, that setting takes precedence.
-
-#### Configuration example for all and SQS
-
-```properties
-aws2.default.region=ap-northeast-1
-aws2.sqs.region=eu-west-2
-```
-
-In this case, the region for all clients except SQS is `ap-northeast-1`,
-and the region for SQS is`eu-west-2`.
 
 ### How do you set `S3Configuration` for `S3ClientBuilder`s?
 

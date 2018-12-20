@@ -21,6 +21,7 @@ import static jp.xet.springconfig.aws.InternalReflectionUtil.invokeStaticMethod;
 import lombok.extern.slf4j.Slf4j;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 @Slf4j
@@ -69,6 +70,17 @@ class AwsClientV1Util {
 		}
 	}
 	
+	static void configureCredentialsProvider(Object builder, AWSCredentialsProvider credentialsProvider) {
+		if (credentialsProvider == null) {
+			return;
+		}
+		try {
+			invokeMethod(builder, "setCredentials", credentialsProvider);
+		} catch (IllegalStateException e) {
+			log.warn(e.getMessage());
+		}
+	}
+	
 	/**
 	 * Build AWS client.
 	 * 
@@ -76,7 +88,7 @@ class AwsClientV1Util {
 	 * @return AWS client
 	 * @see com.amazonaws.client.builder.AwsClientBuilder#build() 
 	 */
-	static <T> T buildClient(Object builder) {
+	static <T> T build(Object builder) {
 		return invokeMethod(builder, "build");
 	}
 }

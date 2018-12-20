@@ -22,6 +22,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -38,7 +39,8 @@ import software.amazon.awssdk.services.ec2.model.Region;
  * @since #version#
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = AwsV2ConfigurationIntegrationTest.TestApplication.class)
+@SpringBootTest
+@ContextConfiguration
 public class AwsV2ConfigurationIntegrationTest {
 	
 	@Test
@@ -51,7 +53,7 @@ public class AwsV2ConfigurationIntegrationTest {
 	@RequiredArgsConstructor
 	@SpringBootApplication
 	@EnableAwsClientV2(Ec2Client.class)
-	@TestPropertySource(properties = "aws2.default.region=ap-northeast-1")
+	@TestPropertySource(properties = "aws2.ec2.region=ap-northeast-1")
 	static class TestApplication implements CommandLineRunner {
 		
 		/**

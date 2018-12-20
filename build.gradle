@@ -8,7 +8,6 @@ buildscript {
 		classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
 		classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:$spotbugsPluginVersion"
 		classpath "com.diffplug.spotless:spotless-plugin-gradle:3.10.0"
-		classpath "de.thetaphi:forbiddenapis:2.2"
 		classpath "de.aaschmid:gradle-cpd-plugin:1.0"
 	}
 }
@@ -19,6 +18,7 @@ plugins {
 	id 'maven'
 	id 'maven-publish'
 	id "com.jfrog.bintray" version "1.8.4"
+	id 'de.thetaphi.forbiddenapis' version '2.6'
 }
 apply plugin: "io.spring.dependency-management"
 
@@ -32,7 +32,6 @@ apply plugin: "com.github.spotbugs"
 apply plugin: "pmd"
 apply plugin: "cpd"
 apply plugin: "jacoco"
-apply plugin: "de.thetaphi.forbiddenapis"
 apply plugin: "com.diffplug.gradle.spotless"
 
 // custom configuration
@@ -92,6 +91,8 @@ dependencies {
 	// aws
 	compileOnly "com.amazonaws:aws-java-sdk-core:$awsJavaSdk1Version"
 	compileOnly "software.amazon.awssdk:aws-core:$awsJavaSdk2Version"
+	compileOnly "software.amazon.awssdk:apache-client:$awsJavaSdk2Version"
+	compileOnly "software.amazon.awssdk:netty-nio-client:$awsJavaSdk2Version"
 	
 	// lombok
 	compileOnly "org.projectlombok:lombok:$lombokVersion"
@@ -132,5 +133,5 @@ configurations.all {
 
 // ======== wrapper ========
 wrapper {
-	gradleVersion = "4.10.2"
+	gradleVersion = "5.0"
 }

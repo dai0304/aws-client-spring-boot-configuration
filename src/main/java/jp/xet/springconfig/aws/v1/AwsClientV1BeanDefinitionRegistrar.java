@@ -20,6 +20,7 @@ import java.util.Arrays;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -53,6 +54,9 @@ class AwsClientV1BeanDefinitionRegistrar implements ImportBeanDefinitionRegistra
 	}
 	
 	private void registerAwsClient(BeanDefinitionRegistry registry, Class<?> clientClass) {
+		if (clientClass.getName().startsWith("com.amazonaws.services.") == false) {
+			throw new BeanCreationException("Class " + clientClass + " is not in AWS SDK for Java v1 package.");
+		}
 		try {
 			log.trace("Attempt to configure AWS client: {}", clientClass);
 			if (clientClass.getName().equals(ENCRYPTION_CLIENT)

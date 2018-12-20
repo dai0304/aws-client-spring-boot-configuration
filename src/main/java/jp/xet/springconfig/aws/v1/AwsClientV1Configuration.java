@@ -42,20 +42,6 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
  *         This value is used only if any endpoint configuration is not set. (string)</li>
  * </ul>
  * 
- * <h3>Default client configurations.</h3>
- * 
- * <ul>
- *     <li>{@code aws1.default[-async].client.<property>} - the {@link ClientConfiguration} to be used by the client.</li>
- *     <li>{@code aws1.default[-async].endpoint.service-endpoint} - The service endpoint either with
- *         or without the protocol (e.g. https://sns.us-west-1.amazonaws.com or sns.us-west-1.amazonaws.com) (string)</li>
- *     <li>{@code aws1.default[-async].endpoint.signing-region} - the region to use
- *         for SigV4 signing of requests (e.g. us-west-1) (string)</li>
- *     <li>{@code aws1.default[-async].region} - the region to be used by the client.
- *         This will be used to determine both the service endpoint (eg: https://sns.us-west-1.amazonaws.com)
- *         and signing region (eg: us-west-1) for requests.
- *         This value is used only if any endpoint configuration is not set. (string)</li>
- * </ul>
- * 
  * <h3>S3 client specific configurations.</h3>
  * 
  * <ul>
@@ -102,6 +88,8 @@ class AwsClientV1Configuration {
 		private MutableEndpointConfiguration endpoint;
 		
 		private String region;
+		
+		private String credentialsProviderBeanName;
 		
 		
 		EndpointConfiguration getEndpoint() {
