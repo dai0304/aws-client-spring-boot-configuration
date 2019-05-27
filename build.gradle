@@ -103,7 +103,7 @@ dependencies {
 	// test
 	testImplementation "org.springframework.boot:spring-boot-starter-test"
 	testImplementation "org.springframework.boot:spring-boot-starter-logging"
-	testImplementation 'org.assertj:assertj-core:3.10.0'
+	testImplementation 'org.assertj:assertj-core:3.12.2'
 	
 	// test AWS client v1
 	testImplementation("com.amazonaws:aws-java-sdk:$awsJavaSdk1Version") {
