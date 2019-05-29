@@ -1,10 +1,38 @@
-// -*- coding: utf-8; mode: groovy -*-
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+			artifact sourcesJar {
+				classifier "sources"
+			}
+			artifact javadocJar {
+				classifier "javadoc"
+			}
+			pom.withXml {
+				asNode().children().last() + {
+					resolveStrategy = Closure.DELEGATE_FIRST
+					name project.name
+					description project.description
+					inceptionYear "2019"
+					licenses {
+						license {
+							name "The Apache Software License, Version 2.0"
+							url "http://www.apache.org/license/LICENSE-2.0.txt"
+							distribution "repo"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 
 bintray {
 	user = System.env.BINTRAY_USER
 	key = System.env.BINTRAY_KEY
 	publications = ["mavenJava"]
-	dryRun = System.env.CIRCLE_BRANCH != "master"
+	dryRun = System.env.CIRCLE_TAG == null
 	publish = true
 	pkg {
 		repo = "maven"
@@ -15,5 +43,10 @@ bintray {
 		vcsUrl = "https://github.com/dai0304/aws-client-spring-boot-configuration.git"
 		licenses = ["Apache-2.0"]
 		labels = ["AWS", "Spring framework"]
+		githubRepo = 'dai0304//aws-client-spring-boot-configuration'
+		version {
+			name = project.version
+			vcsTag = project.version
+		}
 	}
 }
