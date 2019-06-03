@@ -115,7 +115,7 @@ dependencies {
 	// testImplementation 'software.amazon.awssdk:simpledb:2.0.0-preview-11'
 
 	// build
-	spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.7.1'
+	spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.9.0'
 }
 
 // ======== wrapper ========
