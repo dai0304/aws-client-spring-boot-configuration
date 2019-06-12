@@ -25,7 +25,7 @@ jobs:
           command: ./gradlew clean test -PspringBootVersion=2.0.2.RELEASE
       - run:
           name: Run tests for boot-2.1
-          command: ./gradlew clean check jacocoTestReport -x spotbugsTest -x spotbugsMain
+          command: ./gradlew clean check jacocoTestReport
       - store_test_results:
           path: build/test-results
       - store_artifacts:
