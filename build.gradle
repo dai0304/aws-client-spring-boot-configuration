@@ -6,7 +6,7 @@ buildscript {
 	}
 	dependencies {
 		classpath "io.spring.gradle:dependency-management-plugin:1.0.4.RELEASE"
-		classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.5"
+		classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:2.0.0"
 		classpath "com.diffplug.spotless:spotless-plugin-gradle:3.10.0"
 		classpath "de.aaschmid:gradle-cpd-plugin:1.0"
 	}
