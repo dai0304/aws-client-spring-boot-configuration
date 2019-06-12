@@ -22,7 +22,7 @@ jobs:
           command: ./gradlew -v
       - run:
           name: Run tests for boot-2.0
-          command: ./gradlew clean test -PspringBootVersion=2.0.7.RELEASE
+          command: ./gradlew clean test -PspringBootVersion=2.0.2.RELEASE
       - run:
           name: Run tests for boot-2.1
           command: ./gradlew clean check jacocoTestReport -x spotbugsTest -x spotbugsMain
