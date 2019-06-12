@@ -30,7 +30,6 @@ ext.artifactId = "aws-client-spring-boot-configuration"
 apply plugin: "checkstyle"
 apply plugin: "com.github.spotbugs"
 apply plugin: "pmd"
-apply plugin: "cpd"
 apply plugin: "jacoco"
 apply plugin: "com.diffplug.gradle.spotless"
 
@@ -38,7 +37,6 @@ apply plugin: "com.diffplug.gradle.spotless"
 apply from: "${rootProject.projectDir}/gradle/quality/checkstyle.gradle"
 apply from: "${rootProject.projectDir}/gradle/quality/spotbugs.gradle"
 apply from: "${rootProject.projectDir}/gradle/quality/pmd.gradle"
-apply from: "${rootProject.projectDir}/gradle/quality/cpd.gradle"
 apply from: "${rootProject.projectDir}/gradle/quality/jacoco.gradle"
 apply from: "${rootProject.projectDir}/gradle/quality/forbiddenapis.gradle"
 apply from: "${rootProject.projectDir}/gradle/quality/spotless.gradle"
@@ -75,7 +73,7 @@ repositories {
 
 dependencyManagement {
 	imports {
-		mavenBom 'org.springframework.boot:spring-boot-dependencies:2.1.5.RELEASE'
+		mavenBom "org.springframework.boot:spring-boot-dependencies:$springBootVersion"
 	}
 }
 
@@ -120,5 +118,5 @@ dependencies {
 
 // ======== wrapper ========
 wrapper {
-	gradleVersion = "5.0"
+	gradleVersion = "5.4.1"
 }
