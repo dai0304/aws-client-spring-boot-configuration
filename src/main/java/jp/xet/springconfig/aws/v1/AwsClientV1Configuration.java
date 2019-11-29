@@ -28,7 +28,7 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 /**
  * Spring configuration for AWS Clients.
- * 
+ *
  * <ul>
  *     <li>{@code aws1.<service-package-name>[-async].client.<property>} - the {@link ClientConfiguration} to be used
  *         by the client.</li>
@@ -41,9 +41,9 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
  *         and signing region (eg: us-west-1) for requests.
  *         This value is used only if any endpoint configuration is not set. (string)</li>
  * </ul>
- * 
+ *
  * <h3>S3 client specific configurations.</h3>
- * 
+ *
  * <ul>
  *     <li>{@code aws1.s3.path-style-access-enabled} - Configures the client to use path-style access
  *         for all requests. (boolean)</li>
@@ -90,6 +90,8 @@ class AwsClientV1Configuration {
 		private String region;
 		
 		private String credentialsProviderBeanName;
+		
+		private String requestHandlerBeanNames;
 		
 		
 		EndpointConfiguration getEndpoint() {

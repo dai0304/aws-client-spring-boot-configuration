@@ -16,10 +16,12 @@
 package jp.xet.springconfig.aws.v1;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.handlers.RequestHandler2;
 
 class TestUtil {
 	
@@ -38,4 +40,11 @@ class TestUtil {
 	static AWSCredentialsProvider extractCredentialsProvider(Object client) {
 		return (AWSCredentialsProvider) ReflectionTestUtils.getField(client, "awsCredentialsProvider");
 	}
+	
+	@SuppressWarnings("unchecked")
+	static List<RequestHandler2> extractRequestHandlers(Object client) {
+		return (List<RequestHandler2>) ReflectionTestUtils.getField(client, "requestHandler2s");
+	}
+	
+	//requestHandler2s
 }

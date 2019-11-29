@@ -23,6 +23,7 @@ import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureEndpointConfig
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.configureRegion;
 import static jp.xet.springconfig.aws.v1.AwsClientV1Util.createBuilder;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.handlers.RequestHandler2;
 
 import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsClientV1Properties;
 import jp.xet.springconfig.aws.v1.AwsClientV1Configuration.AwsS3ClientV1Properties;
@@ -113,6 +115,13 @@ class AwsClientV1FactoryBean<T>extends AbstractFactoryBean<T> {
 						beanFactory.getBean(credentialsProviderBeanName, AWSCredentialsProvider.class);
 				configureCredentialsProvider(builder, credentialsProvider);
 			});
+		
+		if (config.getRequestHandlerBeanNames() != null) {
+			Object handlers = Arrays.stream(config.getRequestHandlerBeanNames().split(","))
+					.map(name -> beanFactory.getBean(name, RequestHandler2.class))
+					.toArray(RequestHandler2[]::new);
+			invokeMethod(builder, "withRequestHandlers", handlers);
+		}
 		
 		configureClientConfiguration(builder, config.getClient());
 		configureEndpointConfiguration(builder, config.getEndpoint());

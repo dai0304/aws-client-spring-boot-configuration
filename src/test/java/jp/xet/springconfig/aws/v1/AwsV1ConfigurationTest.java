@@ -40,6 +40,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.SystemDefaultDnsResolver;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.handlers.RequestHandler2;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.alexaforbusiness.AmazonAlexaForBusiness;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -74,6 +75,12 @@ public class AwsV1ConfigurationTest {
 	private static final String SYSTEM_PROPERTY_REGION = Regions.US_EAST_1.getName();
 	
 	private static final AWSCredentialsProvider MOCK_CREDENTIALS_PROVIDER = mock(AWSCredentialsProvider.class);
+	
+	private static final RequestHandler2 MOCK_HANDLER1 = mock(RequestHandler2.class);
+	
+	private static final RequestHandler2 MOCK_HANDLER2 = mock(RequestHandler2.class);
+	
+	private static final RequestHandler2 MOCK_HANDLER3 = mock(RequestHandler2.class);
 	
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner();
 	
@@ -431,6 +438,43 @@ public class AwsV1ConfigurationTest {
 				.isInstanceOfSatisfying(AmazonS3EncryptionClient.class, this::isDefaultConfig);
 		});
 	}
+	
+	
+	@Configuration
+	@EnableAwsClientV1(AmazonDynamoDB.class)
+	@EnableConfigurationProperties
+	static class ExampleRequestHandlerConfiguration {
+		
+		@Bean
+		public RequestHandler2 handler1() {
+			return MOCK_HANDLER1;
+		}
+		
+		@Bean
+		public RequestHandler2 handler2() {
+			return MOCK_HANDLER2;
+		}
+		
+		@Bean
+		public RequestHandler2 handler3() {
+			return MOCK_HANDLER3;
+		}
+	}
+	
+	
+	@Test
+	public void requestHandlerDynamoDbClient() {
+		contextRunner.withUserConfiguration(ExampleRequestHandlerConfiguration.class)
+			.withPropertyValues("aws1.dynamodbv2.request-handler-bean-names=handler1,handler3")
+			.run(context -> {
+				assertThat(context.getBean(AmazonDynamoDB.class)).satisfies(client -> {
+					assertThat(TestUtil.extractRequestHandlers(client))
+						.containsExactlyInAnyOrder(MOCK_HANDLER1, MOCK_HANDLER3);
+				});
+			});
+	}
+	
+	// utilities
 	
 	private void isDefaultConfig(AmazonWebServiceClient client) {
 		ClientConfiguration config = client.getClientConfiguration();
