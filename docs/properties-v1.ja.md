@@ -4,6 +4,7 @@
 | --------------------------------------- | ------- | ----
 | `aws1.*.region` \*2                     | string  | (auto)
 | `aws1.*.credentials-provider-bean-name` \*3 | string | `null`
+| `aws1.*.request-handler-bean-names` *   | string  | `null`
 | `aws1.*.endpoint.service-endpoint` \*4  | string  | (auto)
 | `aws1.*.endpoint.signing-region`  \*4   | string  | (auto)
 | `aws1.*.client.user-agent-prefix` \*5   | string  | (auto)
@@ -47,6 +48,7 @@
 * \*1: バージョンやサービス毎にデフォルト値が異なる場合があります。参考: [PredefinedClientConfigurations](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/PredefinedClientConfigurations.java).
 * \*2: signing-region または service-endpoint を明示的に指定した場合は、この値を無視します。 参考: [AwsClientBuilder#setRegion](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/client/builder/AwsClientBuilder.java#L215).
 * \*3: 利用したい `AWSCredentialsProvider` の bean 名を指定します。参考: [AwsClientBuilder#setCredentials](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/client/builder/AwsClientBuilder.java#L110).
+* \*: 利用したい `RequestHandler2` の bean 名をカンマ `,` 区切りで 1 〜複数指定できます。
 * \*4: 参考: [EndpointConfiguration](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/client/builder/AwsClientBuilder.java#L559).
 * \*5: 参考: [ClientConfiguration](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/ClientConfiguration.java).
 * \*6: 参考: [AmazonS3Builder](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-s3/src/main/java/com/amazonaws/services/s3/AmazonS3Builder.java)

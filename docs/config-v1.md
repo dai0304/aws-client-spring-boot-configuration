@@ -136,9 +136,9 @@ We are waiting for Pull Request :-)
 
 ## Limits
 
-### Configure `RequestMetricCollector`, `RequestHandler2`
+### Configure `RequestMetricCollector`
 
-You can not set `RequestMetricCollector`, `RequestHandler2` for each client.
+You can not set `RequestMetricCollector` for each client.
 We are waiting for Pull Request :-)
 
 ### Multiple clients belonging to the same package other than sync/async

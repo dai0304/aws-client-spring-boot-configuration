@@ -137,9 +137,9 @@ Pull Request をお待ちしております。
 
 ## 制限事項
 
-### `RequestMetricCollector`, `RequestHandler2` の設定はできません
+### `RequestMetricCollector` の設定はできません
 
-各クライアントに対する `RequestMetricCollector`, `RequestHandler2` の設定はできません。
+各クライアントに対する `RequestMetricCollector` の設定はできません。
 Pull Request をお待ちしております。
 
 ### 同一パッケージに属する sync / async 以外の複数クライアントで個別の設定はできません

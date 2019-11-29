@@ -47,6 +47,7 @@
 * \*1: The default value may be different for each version or service.  See [PredefinedClientConfigurations](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/PredefinedClientConfigurations.java).
 * \*2: Ignored if neither signin-region or service-endpoint configuration are explicitly provided.  See [AwsClientBuilder#setRegion](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/client/builder/AwsClientBuilder.java#L215).
 * \*3: Bean name of `AWSCredentialsProvider` to use.  See [AwsClientBuilder#setCredentials](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/client/builder/AwsClientBuilder.java#L110).
+* \*: Comma `,` separated bean names of `RequestHandler2` to use.
 * \*4: See [EndpointConfiguration](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/client/builder/AwsClientBuilder.java#L559).
 * \*5: See [ClientConfiguration](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/ClientConfiguration.java).
 * \*6: See [AmazonS3Builder](https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-s3/src/main/java/com/amazonaws/services/s3/AmazonS3Builder.java)
