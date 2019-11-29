@@ -137,13 +137,10 @@ Pull Request をお待ちしております。
 
 ## 制限事項
 
-### `AWSCredentialsProvider`, `RequestMetricCollector`, `RequestHandler2` の設定はできません
+### `RequestMetricCollector`, `RequestHandler2` の設定はできません
 
-各クライアントに対する `AWSCredentialsProvider`, `RequestMetricCollector`, `RequestHandler2` の設定はできません。
+各クライアントに対する `RequestMetricCollector`, `RequestHandler2` の設定はできません。
 Pull Request をお待ちしております。
-
-ただし、我々はクライアントに対してカスタムした `AWSCredentialsProvider` を設定すべきではないと考えています。
-もし必要があれば、issue にてディスカッションが必要です。
 
 ### 同一パッケージに属する sync / async 以外の複数クライアントで個別の設定はできません
 
