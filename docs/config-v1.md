@@ -136,13 +136,10 @@ We are waiting for Pull Request :-)
 
 ## Limits
 
-### Configure `AWSCredentialsProvider`, `RequestMetricCollector`, `RequestHandler2`
+### Configure `RequestMetricCollector`, `RequestHandler2`
 
-You can not set `AWSCredentialsProvider`, `RequestMetricCollector`, `RequestHandler2` for each client.
+You can not set `RequestMetricCollector`, `RequestHandler2` for each client.
 We are waiting for Pull Request :-)
-
-However, we think that we should not set a custom `AWSCredentialsProvider` for the clients.
-If necessary, a discussion is necessary at issue.
 
 ### Multiple clients belonging to the same package other than sync/async
 
