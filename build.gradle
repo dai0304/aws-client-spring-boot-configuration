@@ -18,7 +18,7 @@ plugins {
 	id 'maven'
 	id 'maven-publish'
 	id "com.jfrog.bintray" version "1.8.4"
-	id 'de.thetaphi.forbiddenapis' version '2.7'
+	id 'de.thetaphi.forbiddenapis' version '3.0.1'
 }
 apply plugin: "io.spring.dependency-management"
 
