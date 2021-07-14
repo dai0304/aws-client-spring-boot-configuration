@@ -88,7 +88,7 @@ dependencies {
 
 	// aws
 	compileOnly 'com.amazonaws:aws-java-sdk-core:1.11.721'
-	compileOnly 'software.amazon.awssdk:aws-core:2.10.63'
+	compileOnly 'software.amazon.awssdk:aws-core:2.16.102'
 	compileOnly 'software.amazon.awssdk:apache-client:2.10.63'
 	compileOnly 'software.amazon.awssdk:netty-nio-client:2.10.63'
 
