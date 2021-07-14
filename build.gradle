@@ -109,7 +109,7 @@ dependencies {
 	}
 
 	// test AWS client v2
-	testImplementation 'software.amazon.awssdk:aws-sdk-java:2.10.63'
+	testImplementation 'software.amazon.awssdk:aws-sdk-java:2.16.102'
 	// testImplementation 'software.amazon.awssdk:simpledb:2.0.0-preview-11'
 
 	// build
