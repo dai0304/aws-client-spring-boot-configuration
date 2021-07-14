@@ -104,7 +104,7 @@ dependencies {
 	testImplementation 'org.assertj:assertj-core'
 
 	// test AWS client v1
-	testImplementation('com.amazonaws:aws-java-sdk:1.11.720') {
+	testImplementation('com.amazonaws:aws-java-sdk:1.12.24') {
 		exclude group: 'com.amazonaws', module: 'aws-java-sdk-simpledb'
 	}
 
